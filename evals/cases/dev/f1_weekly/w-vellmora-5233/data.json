@@ -1,0 +1,95 @@
+{
+  "company": "Vellmora Outdoor",
+  "week": "2026-W46",
+  "week_number": 46,
+  "teams": [
+    {
+      "team": "Payments",
+      "lead": "Lena Castellanos",
+      "done": [
+        "Finished the Sorrel migration",
+        "Retired the old Cobalt service"
+      ],
+      "in_progress": [
+        "Load testing for Lantern is underway"
+      ],
+      "blockers": [],
+      "next_week": [
+        "Start the Lantern rollout"
+      ],
+      "metrics": {
+        "tickets_closed": 74,
+        "open_bugs": 24,
+        "deploys": 29,
+        "auth_success_pct": 96.15
+      }
+    },
+    {
+      "team": "Growth",
+      "lead": "Kenji Moreau",
+      "done": [
+        "Released the Tamarind beta to internal users",
+        "Closed the Quill security review"
+      ],
+      "in_progress": [
+        "Load testing for Wren is underway"
+      ],
+      "blockers": [
+        "Waiting on legal sign-off for Wren"
+      ],
+      "next_week": [
+        "Complete the Wren review"
+      ],
+      "metrics": {
+        "tickets_closed": 33,
+        "open_bugs": 37,
+        "deploys": 15,
+        "signup_conversion_pct": 8.9
+      }
+    },
+    {
+      "team": "Support",
+      "lead": "Tomasz Okafor",
+      "done": [
+        "Finished the Kestrel migration",
+        "Retired the old Marlow service"
+      ],
+      "in_progress": [
+        "Data backfill for Basalt is running"
+      ],
+      "blockers": [
+        "Blocked on a vendor API change for Basalt"
+      ],
+      "next_week": [
+        "Complete the Basalt review"
+      ],
+      "metrics": {
+        "tickets_closed": 32,
+        "open_bugs": 27,
+        "deploys": 26,
+        "first_response_min": null
+      },
+      "notes": "The first response figure is unavailable this week because the dashboard was down."
+    }
+  ],
+  "team_metrics": [
+    {
+      "team": "Payments",
+      "tickets_closed": 74,
+      "open_bugs": 24,
+      "deploys": 29
+    },
+    {
+      "team": "Growth",
+      "tickets_closed": 33,
+      "open_bugs": 37,
+      "deploys": 15
+    },
+    {
+      "team": "Support",
+      "tickets_closed": 32,
+      "open_bugs": 27,
+      "deploys": 26
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "company": "Brightwell Ceramics",
+  "period": "Q3 2026",
+  "prior_period": "Q2 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 53300000,
+    "revenue_this": 58700000,
+    "gross_margin_prior_pct": 28.4,
+    "gross_margin_pct": 27.1,
+    "opex_change_pct": 27.3,
+    "active_customers_prior": 2794,
+    "active_customers": 2962,
+    "churn_prior_pct": 4.6,
+    "churn_pct": 4.5,
+    "deferred_revenue": 3700000,
+    "nps": null
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q2 2026": 53300000,
+      "Q3 2026": 58700000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q2 2026": 28.4,
+      "Q3 2026": 27.1
+    },
+    {
+      "kpi": "Active customers",
+      "Q2 2026": 2794,
+      "Q3 2026": 2962
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q2 2026": 4.6,
+      "Q3 2026": 4.5
+    },
+    {
+      "kpi": "NPS",
+      "Q2 2026": null,
+      "Q3 2026": null
+    }
+  ],
+  "notes": [
+    "Two regional distributors renewed on multi-year terms.",
+    "Support response times improved after the new triage rota.",
+    "The board approved the revised pricing review for next quarter.",
+    "Deferred revenue reflects annual contracts invoiced in advance.",
+    "The NPS survey was postponed; no score exists for either quarter."
+  ]
+}

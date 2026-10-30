@@ -1,0 +1,10 @@
+# Dev case seeds (committed; builder agents may read these cases and their results).
+# Held-out seeds are owner-held and never live in this repository (EVALS_PROPOSAL §5.3).
+#
+# family        seed   options (comma-separated; "-" for none)
+f2_quarterly    1903   bad_news
+f2_quarterly    2417   allow_growth,unit
+f2_quarterly    3851   bad_news,unit
+f1_weekly       5120   -
+f1_weekly       5233   missing
+f3_readme       7781   -

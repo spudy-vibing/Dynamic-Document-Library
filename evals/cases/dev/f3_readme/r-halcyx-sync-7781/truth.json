@@ -1,0 +1,31 @@
+{
+  "values": {
+    "timeout_s": 94,
+    "workers": 21,
+    "retries": 11,
+    "python_floor": 3.9
+  },
+  "labels": {
+    "timeout_s": [
+      "timeout"
+    ],
+    "workers": [
+      "workers"
+    ],
+    "retries": [
+      "retries"
+    ],
+    "python_floor": [
+      "Python"
+    ]
+  },
+  "derived": {},
+  "facts": {
+    "install_command": "pip install halcyx-sync",
+    "cli_command": "halcyxsync",
+    "cli_flags": "-h/--help, --config, --workers, --timeout, --retries, --dry-run, --verbose",
+    "license": "MPL-2.0",
+    "python_floor": ">=3.9",
+    "version": "0.6.9"
+  }
+}

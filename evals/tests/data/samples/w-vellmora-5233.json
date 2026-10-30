@@ -1,0 +1,11 @@
+{
+  "case_id": "w-vellmora-5233",
+  "description": "Hand-written clean output: every figure from the data, no chatter, constraints met.",
+  "sections": {
+    "overview": "Week 46 was a delivery week for all three teams. Payments finished the Sorrel migration, Growth released the Tamarind beta internally, and Support finished the Kestrel migration. Two items are blocked: legal sign-off for Wren and a vendor API change for Basalt. Each team's tickets, open bugs and deploys are in the table below.",
+    "payments": "Payments finished the Sorrel migration and retired the old Cobalt service. The team closed 74 tickets and made 29 deploys, with authorisation success at 96.15%.\n\nLoad testing for Lantern is underway ahead of next week's rollout. Payments reported no blockers and has 24 open bugs.",
+    "growth": "Growth released the Tamarind beta to internal users and closed the Quill security review. It closed 33 tickets across 15 deploys, and signup conversion was 8.9%.\n\nLoad testing for Wren is underway, but the work is waiting on legal sign-off. The team is carrying 37 open bugs into next week.",
+    "support": "Support finished the Kestrel migration and retired the old Marlow service. The team closed 32 tickets and made 26 deploys, and 27 bugs remain open.\n\nThe Basalt data backfill is running but is blocked on a vendor API change. The first response figure is unavailable this week because the dashboard was down.",
+    "next_week": "- Payments: start the Lantern rollout once load testing completes.\n- Growth: complete the Wren review, subject to legal sign-off.\n- Support: complete the Basalt review after the vendor API change lands."
+  }
+}

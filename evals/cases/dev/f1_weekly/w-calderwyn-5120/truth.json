@@ -1,0 +1,97 @@
+{
+  "values": {
+    "week_number": 46,
+    "platform_tickets_closed": 23,
+    "platform_open_bugs": 21,
+    "platform_deploys": 28,
+    "platform_p95_latency_ms": 413,
+    "mobile_tickets_closed": 57,
+    "mobile_open_bugs": 25,
+    "mobile_deploys": 32,
+    "mobile_crash_free_pct": 99.42,
+    "growth_tickets_closed": 36,
+    "growth_open_bugs": 48,
+    "growth_deploys": 35,
+    "growth_signup_conversion_pct": 7.2
+  },
+  "labels": {
+    "week_number": [
+      "week"
+    ],
+    "platform_tickets_closed": [
+      "Platform tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "platform_open_bugs": [
+      "Platform open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "platform_deploys": [
+      "Platform deploys",
+      "deploys",
+      "deployments"
+    ],
+    "platform_p95_latency_ms": [
+      "p95 latency",
+      "latency"
+    ],
+    "mobile_tickets_closed": [
+      "Mobile tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "mobile_open_bugs": [
+      "Mobile open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "mobile_deploys": [
+      "Mobile deploys",
+      "deploys",
+      "deployments"
+    ],
+    "mobile_crash_free_pct": [
+      "crash-free",
+      "crash free"
+    ],
+    "growth_tickets_closed": [
+      "Growth tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "growth_open_bugs": [
+      "Growth open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "growth_deploys": [
+      "Growth deploys",
+      "deploys",
+      "deployments"
+    ],
+    "growth_signup_conversion_pct": [
+      "signup conversion",
+      "sign-up conversion",
+      "conversion"
+    ]
+  },
+  "derived": {
+    "tickets_closed_total": {
+      "value": 116,
+      "formula": "platform_tickets_closed + mobile_tickets_closed + growth_tickets_closed"
+    },
+    "deploys_total": {
+      "value": 95,
+      "formula": "platform_deploys + mobile_deploys + growth_deploys"
+    }
+  },
+  "facts": {
+    "company": "Calderwyn Textiles",
+    "week": "2026-W46",
+    "platform_lead": "Tomasz Okafor",
+    "mobile_lead": "Priya Halloran",
+    "growth_lead": "Ama Brennan"
+  }
+}

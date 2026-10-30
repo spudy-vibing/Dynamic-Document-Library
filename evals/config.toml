@@ -1,0 +1,56 @@
+# Eval configuration (EVAL-12, EVAL-20, EVAL-21). Pinned models and explicit effort.
+# Model IDs are allowlisted here by FR-PRV-3; nowhere else under evals/ may hard-code one.
+
+[models]
+generator = "claude-sonnet-5-5"   # assumed DEFAULT_MODEL until decision 0005
+judge = "claude-opus-5-5"         # never weaker than the generator (EVAL-12)
+
+[effort]                          # always sent explicitly as output_config.effort
+generator = "medium"
+judge = "medium"
+
+[max_tokens]                      # includes adaptive-thinking tokens
+generator = 16000
+judge = 16000
+
+# USD per million tokens. Verify against the official pricing page before a live run.
+# cache_write is the 5-minute cache-write rate (1.25x input).
+[prices."claude-sonnet-5-5"]
+input = 2.00
+output = 10.00
+cache_read = 0.20
+cache_write = 2.50
+
+[prices."claude-opus-5-5"]
+input = 4.00
+output = 20.00
+cache_read = 0.20
+cache_write = 5.00
+
+[judge]
+version = "j1"                    # bump when the judge model, effort or rubric changes
+use_batches = true                # Message Batches API (about 50% cheaper)
+pairs = [
+    ["b0-oneshot", "b1-parallel"],
+    ["b2-chain", "b1-parallel"],
+]
+
+[run]
+case_set = "dev"                  # evals/cases/<case_set>/
+reps = 3
+max_usd = 15.0                    # the harness refuses to start a run projected above this (EVAL-20)
+max_concurrency = 4
+refusal_rate_limit = 0.02         # above this, a generator's results are marked not comparable
+
+[projection]
+# Pre-run cost projection (EVAL-20). Expected, not worst case: max_tokens is a hard cap
+# that real calls rarely approach. The runner refuses runs whose expected cost exceeds
+# run.max_usd and prints the worst case (max_tokens on every call) alongside.
+output_tokens_per_call = 2500     # generator calls, thinking included
+judge_output_tokens = 2000        # per judge call (one order of one pair)
+chars_per_token = 4
+
+[grading]
+number_tolerance = 0.005          # 0.5% relative (EVAL-22)
+ngram = 6                         # cross-section repetition (deliberately not FR-COH-5's 8)
+word_tolerance = 0.10             # +/-10% on word limits

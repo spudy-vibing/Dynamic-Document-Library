@@ -1,0 +1,10 @@
+{
+  "case_id": "q-halcyra-1903",
+  "description": "Hand-written clean output: every figure from the data, no chatter, constraints met.",
+  "sections": {
+    "summary": "Halcyra Freight's revenue fell to $30.1M in Q3 2026, down from $31.9M in Q2 2026. A supplier outage delayed shipments for most of the second month, and continued discounting on the legacy line weighed on pricing.\n\nGross margin narrowed to 23.5% from 25.3%. Active customers declined to 3,095 from 3,206, and churn rose to 5.1%. No customer satisfaction score was collected this quarter because the survey vendor changed.",
+    "analysis": "Revenue declined from $31.9M in Q2 2026 to $30.1M in Q3 2026. The supplier outage pushed shipments out of the second month, and price discounting on the legacy line continued to reduce realised prices. Gross margin moved from 25.3% to 23.5%, reflecting the discounting and the cost of rerouting delayed orders. Operating expenses changed by 23.2% against the prior quarter, which deserves review alongside the lower revenue base.\n\nThe customer base also contracted. Active customers fell from 3,206 to 3,095, and churn increased from 4.4% to 5.1%. The ERP migration remains on schedule for completion next quarter and should give finance a clearer view of cost by lane once it is live.",
+    "risks": "- Further supplier disruption could delay shipments again and push more revenue out of the quarter.\n- Continued discounting on the legacy line could compress gross margin below the current 23.5%.\n- Rising churn, now 5.1%, could shrink the active customer base further if renewals are not secured.",
+    "recommendations": "- Agree a backup supplier for the routes hit by the outage before the peak shipping weeks.\n- Set a floor price for the legacy line and report discount depth monthly to the leadership team.\n- Contact the largest accounts with falling volumes and restart the satisfaction survey with the new vendor."
+  }
+}

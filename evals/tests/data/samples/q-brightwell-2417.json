@@ -1,0 +1,10 @@
+{
+  "case_id": "q-brightwell-2417",
+  "description": "Hand-written clean output: every figure from the data, no chatter, constraints met.",
+  "sections": {
+    "summary": "Brightwell Ceramics grew revenue to $58.7M in Q3 2026, up 10.1% on Q2 2026. Two regional distributors renewed on multi-year terms, which supported volume through the quarter.\n\nGross margin eased to 27.1% from 28.4%. Active customers rose to 2,962 and churn held steady at 4.5%. The NPS survey was postponed, so there is no customer score to report.",
+    "analysis": "Revenue increased from $53.3M in Q2 2026 to $58.7M in Q3 2026, growth of 10.1%. Deferred revenue stood at $3.7M, reflecting annual contracts invoiced in advance. Gross margin slipped from 28.4% to 27.1%, and operating expenses changed by 27.3% against the prior quarter.\n\nCustomer metrics improved. Active customers grew from 2,794 to 2,962, while churn edged down from 4.6% to 4.5%. Support response times improved after the new triage rota, and the board approved a pricing review for next quarter that could help restore margin.",
+    "risks": "- The pricing review could unsettle distributors that have just renewed on multi-year terms.\n- Gross margin has slipped to 27.1% and may fall further if the current order mix persists.\n- Without an NPS result, early warning of customer dissatisfaction rests on churn alone.",
+    "recommendations": "- Share the pricing review timeline with the renewed distributors before any change takes effect.\n- Track gross margin by channel each month so the leadership team can see where it is slipping.\n- Run the postponed NPS survey early next quarter to restore a direct measure of customer sentiment."
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "values": {
+    "revenue_prior": 85100000,
+    "revenue_this": 80500000,
+    "gross_margin_prior_pct": 32.9,
+    "gross_margin_pct": 34.1,
+    "opex_change_pct": 33.9,
+    "active_customers_prior": 1708,
+    "active_customers": 1656,
+    "churn_prior_pct": 6.9,
+    "churn_pct": 7.7,
+    "deferred_revenue": 3400000,
+    "pipeline_coverage": null
+  },
+  "labels": {
+    "revenue_prior": [
+      "Q2 2026 revenue",
+      "prior-quarter revenue",
+      "revenue"
+    ],
+    "revenue_this": [
+      "Q3 2026 revenue",
+      "revenue"
+    ],
+    "gross_margin_prior_pct": [
+      "prior-quarter gross margin",
+      "gross margin"
+    ],
+    "gross_margin_pct": [
+      "gross margin",
+      "margin"
+    ],
+    "opex_change_pct": [
+      "operating expenses",
+      "opex"
+    ],
+    "active_customers_prior": [
+      "prior-quarter customers",
+      "active customers",
+      "customers"
+    ],
+    "active_customers": [
+      "active customers",
+      "customers"
+    ],
+    "churn_prior_pct": [
+      "prior-quarter churn",
+      "churn"
+    ],
+    "churn_pct": [
+      "churn"
+    ],
+    "deferred_revenue": [
+      "deferred revenue"
+    ],
+    "pipeline_coverage": [
+      "pipeline coverage"
+    ]
+  },
+  "derived": {
+    "revenue_growth_pct": {
+      "value": -5.4,
+      "formula": "(revenue_this / revenue_prior - 1) * 100"
+    },
+    "revenue_change": {
+      "value": -4600000,
+      "formula": "revenue_this - revenue_prior"
+    }
+  },
+  "facts": {
+    "company": "Calderwyn Textiles",
+    "period": "Q3 2026",
+    "prior_period": "Q2 2026",
+    "revenue_direction": "down"
+  }
+}

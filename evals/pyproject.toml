@@ -1,0 +1,23 @@
+[project]
+name = "doccode-evals"
+version = "0.1.0"
+description = "Eval harness for DocCode: cases, baselines, graders, judge (BRD §5.7). Never imported by the library."
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.79",
+    "markdown-it-py>=3.0",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+# Dependencies only: the `evals` package is imported from the repository root
+# (`uv run --project evals python -m evals ...`), not installed.
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = [".."]
+testpaths = ["tests"]
+addopts = "-q"

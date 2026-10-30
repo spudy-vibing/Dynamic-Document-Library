@@ -1,0 +1,78 @@
+{
+  "values": {
+    "revenue_prior": 53300000,
+    "revenue_this": 58700000,
+    "gross_margin_prior_pct": 28.4,
+    "gross_margin_pct": 27.1,
+    "opex_change_pct": 27.3,
+    "active_customers_prior": 2794,
+    "active_customers": 2962,
+    "churn_prior_pct": 4.6,
+    "churn_pct": 4.5,
+    "deferred_revenue": 3700000,
+    "nps": null
+  },
+  "labels": {
+    "revenue_prior": [
+      "Q2 2026 revenue",
+      "prior-quarter revenue",
+      "revenue"
+    ],
+    "revenue_this": [
+      "Q3 2026 revenue",
+      "revenue"
+    ],
+    "gross_margin_prior_pct": [
+      "prior-quarter gross margin",
+      "gross margin"
+    ],
+    "gross_margin_pct": [
+      "gross margin",
+      "margin"
+    ],
+    "opex_change_pct": [
+      "operating expenses",
+      "opex"
+    ],
+    "active_customers_prior": [
+      "prior-quarter customers",
+      "active customers",
+      "customers"
+    ],
+    "active_customers": [
+      "active customers",
+      "customers"
+    ],
+    "churn_prior_pct": [
+      "prior-quarter churn",
+      "churn"
+    ],
+    "churn_pct": [
+      "churn"
+    ],
+    "deferred_revenue": [
+      "deferred revenue"
+    ],
+    "nps": [
+      "NPS",
+      "Net Promoter Score",
+      "net promoter"
+    ]
+  },
+  "derived": {
+    "revenue_growth_pct": {
+      "value": 10.1,
+      "formula": "(revenue_this / revenue_prior - 1) * 100"
+    },
+    "revenue_change": {
+      "value": 5400000,
+      "formula": "revenue_this - revenue_prior"
+    }
+  },
+  "facts": {
+    "company": "Brightwell Ceramics",
+    "period": "Q3 2026",
+    "prior_period": "Q2 2026",
+    "revenue_direction": "up"
+  }
+}

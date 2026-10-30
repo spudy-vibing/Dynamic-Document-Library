@@ -1,0 +1,98 @@
+{
+  "values": {
+    "week_number": 46,
+    "payments_tickets_closed": 74,
+    "payments_open_bugs": 24,
+    "payments_deploys": 29,
+    "payments_auth_success_pct": 96.15,
+    "growth_tickets_closed": 33,
+    "growth_open_bugs": 37,
+    "growth_deploys": 15,
+    "growth_signup_conversion_pct": 8.9,
+    "support_tickets_closed": 32,
+    "support_open_bugs": 27,
+    "support_deploys": 26,
+    "support_first_response_min": null
+  },
+  "labels": {
+    "week_number": [
+      "week"
+    ],
+    "payments_tickets_closed": [
+      "Payments tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "payments_open_bugs": [
+      "Payments open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "payments_deploys": [
+      "Payments deploys",
+      "deploys",
+      "deployments"
+    ],
+    "payments_auth_success_pct": [
+      "authorisation success",
+      "auth success",
+      "authorization success"
+    ],
+    "growth_tickets_closed": [
+      "Growth tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "growth_open_bugs": [
+      "Growth open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "growth_deploys": [
+      "Growth deploys",
+      "deploys",
+      "deployments"
+    ],
+    "growth_signup_conversion_pct": [
+      "signup conversion",
+      "sign-up conversion",
+      "conversion"
+    ],
+    "support_tickets_closed": [
+      "Support tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "support_open_bugs": [
+      "Support open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "support_deploys": [
+      "Support deploys",
+      "deploys",
+      "deployments"
+    ],
+    "support_first_response_min": [
+      "first response",
+      "first-response"
+    ]
+  },
+  "derived": {
+    "tickets_closed_total": {
+      "value": 139,
+      "formula": "payments_tickets_closed + growth_tickets_closed + support_tickets_closed"
+    },
+    "deploys_total": {
+      "value": 70,
+      "formula": "payments_deploys + growth_deploys + support_deploys"
+    }
+  },
+  "facts": {
+    "company": "Vellmora Outdoor",
+    "week": "2026-W46",
+    "payments_lead": "Lena Castellanos",
+    "growth_lead": "Kenji Moreau",
+    "support_lead": "Tomasz Okafor"
+  }
+}

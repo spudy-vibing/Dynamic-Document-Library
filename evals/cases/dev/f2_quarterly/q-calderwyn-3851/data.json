@@ -1,0 +1,53 @@
+{
+  "company": "Calderwyn Textiles",
+  "period": "Q3 2026",
+  "prior_period": "Q2 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 85100000,
+    "revenue_this": 80500000,
+    "gross_margin_prior_pct": 32.9,
+    "gross_margin_pct": 34.1,
+    "opex_change_pct": 33.9,
+    "active_customers_prior": 1708,
+    "active_customers": 1656,
+    "churn_prior_pct": 6.9,
+    "churn_pct": 7.7,
+    "deferred_revenue": 3400000,
+    "pipeline_coverage": null
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q2 2026": 85100000,
+      "Q3 2026": 80500000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q2 2026": 32.9,
+      "Q3 2026": 34.1
+    },
+    {
+      "kpi": "Active customers",
+      "Q2 2026": 1708,
+      "Q3 2026": 1656
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q2 2026": 6.9,
+      "Q3 2026": 7.7
+    },
+    {
+      "kpi": "Pipeline coverage",
+      "Q2 2026": null,
+      "Q3 2026": null
+    }
+  ],
+  "notes": [
+    "Price discounting on the legacy line continued to weigh on revenue.",
+    "A supplier outage delayed shipments for most of the second month.",
+    "Headcount was flat; two open roles in finance remain unfilled.",
+    "Deferred revenue reflects annual contracts invoiced in advance.",
+    "Pipeline coverage was not reported because the CRM migration is incomplete."
+  ]
+}

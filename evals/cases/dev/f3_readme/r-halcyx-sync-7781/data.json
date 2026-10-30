@@ -1,0 +1,39 @@
+{
+  "package": "halcyx-sync",
+  "version": "0.6.9",
+  "description": "Mirror a directory tree to object storage, skipping unchanged files.",
+  "command": "halcyxsync",
+  "requires_python": ">=3.9",
+  "license": "MPL-2.0",
+  "flags": [
+    {
+      "flag": "--config PATH",
+      "default": "./halcyxsync.toml"
+    },
+    {
+      "flag": "--workers N",
+      "default": 21
+    },
+    {
+      "flag": "--timeout SECONDS",
+      "default": 94
+    },
+    {
+      "flag": "--retries N",
+      "default": 11
+    },
+    {
+      "flag": "--dry-run",
+      "default": false
+    },
+    {
+      "flag": "--verbose",
+      "default": false
+    }
+  ],
+  "defaults": {
+    "timeout_s": 94,
+    "workers": 21,
+    "retries": 11
+  }
+}

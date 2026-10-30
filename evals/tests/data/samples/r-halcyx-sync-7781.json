@@ -1,0 +1,10 @@
+{
+  "case_id": "r-halcyx-sync-7781",
+  "description": "Hand-written clean output: every figure from the data, no chatter, constraints met.",
+  "sections": {
+    "overview": "halcyx-sync mirrors a directory tree to object storage and skips files that have not changed since the last run. It is a command-line tool for developers and operators who keep backups or static assets in a storage bucket.",
+    "installation": "Install the package from PyPI:\n\n```bash\npip install halcyx-sync\n```\n\nhalcyx-sync requires Python 3.9 or later.",
+    "usage": "Point `halcyxsync` at the directory to mirror:\n\n```bash\nhalcyxsync ./site\n```\n\nOptions:\n\n- `-h, --help`: show the help message and exit.\n- `--config PATH`: read settings from PATH (default: `./halcyxsync.toml`).\n- `--workers N`: number of parallel workers (default: 21).\n- `--timeout SECONDS`: per-request timeout in seconds (default: 94).\n- `--retries N`: retries per failed request (default: 11).\n- `--dry-run`: print what would happen without changing anything.\n- `--verbose`: log every file considered.",
+    "license": "halcyx-sync is released under the Mozilla Public License 2.0 (MPL-2.0)."
+  }
+}

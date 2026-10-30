@@ -1,0 +1,51 @@
+{
+  "company": "Halcyra Freight",
+  "period": "Q3 2026",
+  "prior_period": "Q2 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 31900000,
+    "revenue_this": 30100000,
+    "gross_margin_prior_pct": 25.3,
+    "gross_margin_pct": 23.5,
+    "opex_change_pct": 23.2,
+    "active_customers_prior": 3206,
+    "active_customers": 3095,
+    "churn_prior_pct": 4.4,
+    "churn_pct": 5.1,
+    "csat_pct": null
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q2 2026": 31900000,
+      "Q3 2026": 30100000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q2 2026": 25.3,
+      "Q3 2026": 23.5
+    },
+    {
+      "kpi": "Active customers",
+      "Q2 2026": 3206,
+      "Q3 2026": 3095
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q2 2026": 4.4,
+      "Q3 2026": 5.1
+    },
+    {
+      "kpi": "CSAT (%)",
+      "Q2 2026": null,
+      "Q3 2026": null
+    }
+  ],
+  "notes": [
+    "A supplier outage delayed shipments for most of the second month.",
+    "Price discounting on the legacy line continued to weigh on revenue.",
+    "The ERP migration is on schedule for completion next quarter.",
+    "The CSAT survey vendor changed; no satisfaction score was collected."
+  ]
+}

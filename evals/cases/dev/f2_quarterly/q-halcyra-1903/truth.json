@@ -1,0 +1,73 @@
+{
+  "values": {
+    "revenue_prior": 31900000,
+    "revenue_this": 30100000,
+    "gross_margin_prior_pct": 25.3,
+    "gross_margin_pct": 23.5,
+    "opex_change_pct": 23.2,
+    "active_customers_prior": 3206,
+    "active_customers": 3095,
+    "churn_prior_pct": 4.4,
+    "churn_pct": 5.1,
+    "csat_pct": null
+  },
+  "labels": {
+    "revenue_prior": [
+      "Q2 2026 revenue",
+      "prior-quarter revenue",
+      "revenue"
+    ],
+    "revenue_this": [
+      "Q3 2026 revenue",
+      "revenue"
+    ],
+    "gross_margin_prior_pct": [
+      "prior-quarter gross margin",
+      "gross margin"
+    ],
+    "gross_margin_pct": [
+      "gross margin",
+      "margin"
+    ],
+    "opex_change_pct": [
+      "operating expenses",
+      "opex"
+    ],
+    "active_customers_prior": [
+      "prior-quarter customers",
+      "active customers",
+      "customers"
+    ],
+    "active_customers": [
+      "active customers",
+      "customers"
+    ],
+    "churn_prior_pct": [
+      "prior-quarter churn",
+      "churn"
+    ],
+    "churn_pct": [
+      "churn"
+    ],
+    "csat_pct": [
+      "CSAT",
+      "customer satisfaction"
+    ]
+  },
+  "derived": {
+    "revenue_growth_pct": {
+      "value": -5.6,
+      "formula": "(revenue_this / revenue_prior - 1) * 100"
+    },
+    "revenue_change": {
+      "value": -1800000,
+      "formula": "revenue_this - revenue_prior"
+    }
+  },
+  "facts": {
+    "company": "Halcyra Freight",
+    "period": "Q3 2026",
+    "prior_period": "Q2 2026",
+    "revenue_direction": "down"
+  }
+}

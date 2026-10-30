@@ -1,0 +1,2 @@
+# Fake-mode summaries are pipeline checks, not results; keep them out of git.
+fake-*

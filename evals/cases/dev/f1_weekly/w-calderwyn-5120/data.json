@@ -1,0 +1,96 @@
+{
+  "company": "Calderwyn Textiles",
+  "week": "2026-W46",
+  "week_number": 46,
+  "teams": [
+    {
+      "team": "Platform",
+      "lead": "Tomasz Okafor",
+      "done": [
+        "Finished the Basalt migration",
+        "Retired the old Sorrel service"
+      ],
+      "in_progress": [
+        "Load testing for Lantern is underway"
+      ],
+      "blockers": [
+        "Waiting on legal sign-off for Lantern"
+      ],
+      "next_week": [
+        "Complete the Lantern review"
+      ],
+      "metrics": {
+        "tickets_closed": 23,
+        "open_bugs": 21,
+        "deploys": 28,
+        "p95_latency_ms": 413
+      }
+    },
+    {
+      "team": "Mobile",
+      "lead": "Priya Halloran",
+      "done": [
+        "Shipped project Cobalt to all customers",
+        "Finished the Marlow migration"
+      ],
+      "in_progress": [
+        "Data backfill for Tamarind is running"
+      ],
+      "blockers": [
+        "Blocked on a vendor API change for Tamarind"
+      ],
+      "next_week": [
+        "Start the Tamarind rollout"
+      ],
+      "metrics": {
+        "tickets_closed": 57,
+        "open_bugs": 25,
+        "deploys": 32,
+        "crash_free_pct": 99.42
+      }
+    },
+    {
+      "team": "Growth",
+      "lead": "Ama Brennan",
+      "done": [
+        "Retired the old Kestrel service",
+        "Finished the Wren migration"
+      ],
+      "in_progress": [
+        "Data backfill for Juniper is running"
+      ],
+      "blockers": [
+        "Waiting on legal sign-off for Juniper"
+      ],
+      "next_week": [
+        "Hand Juniper over to support"
+      ],
+      "metrics": {
+        "tickets_closed": 36,
+        "open_bugs": 48,
+        "deploys": 35,
+        "signup_conversion_pct": 7.2
+      }
+    }
+  ],
+  "team_metrics": [
+    {
+      "team": "Platform",
+      "tickets_closed": 23,
+      "open_bugs": 21,
+      "deploys": 28
+    },
+    {
+      "team": "Mobile",
+      "tickets_closed": 57,
+      "open_bugs": 25,
+      "deploys": 32
+    },
+    {
+      "team": "Growth",
+      "tickets_closed": 36,
+      "open_bugs": 48,
+      "deploys": 35
+    }
+  ]
+}
