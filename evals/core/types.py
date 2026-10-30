@@ -196,8 +196,9 @@ class MetricDef:
     fmt: str  # "pct" | "num" | "usd" | "ms"
 
 
-# Every metric a grader may emit. Reports show them in this order. Per-trap metrics
-# are emitted as "trap.<name>" (for example "trap.t1_derivable") and listed separately.
+# Every metric a grader (or the claim checker / absolute rubric) may emit. Reports show them
+# in this order. Per-trap metrics are emitted as "trap.<name>" (for example
+# "trap.t1_derivable") and listed separately, as are the "abs.<criterion>" means.
 METRICS: dict[str, MetricDef] = {
     "unr": MetricDef("UNR", "lower", "pct"),
     "unr_silent": MetricDef("Silent UNR", "lower", "pct"),
@@ -212,6 +213,14 @@ METRICS: dict[str, MetricDef] = {
     "cost_usd": MetricDef("$/doc", "lower", "usd"),
     "cache_hit": MetricDef("Cache hit", "higher", "pct"),
     "wall_ms": MetricDef("Wall", "lower", "ms"),
+    # Claim checker (EVAL-11, evals/judge/claims.py), from claims.jsonl.
+    "misattrib": MetricDef("Misattrib.", "lower", "pct"),
+    "misattrib_silent": MetricDef("Silent misattrib.", "lower", "pct"),
+    "docs_misattrib_silent": MetricDef("Docs w/ silent misattrib.", "lower", "pct"),
+    # Absolute rubric floors (EVAL-10, BRD §1.5, evals/judge/absolute.py), from absolute.jsonl.
+    # Per-criterion means are emitted as "abs.<criterion>" and are diagnosis only, never ranked.
+    "abs_floor": MetricDef("Docs ≤ floor on any criterion", "lower", "pct"),
+    "abs_c1_is_1": MetricDef("Docs with C1 accuracy = 1", "lower", "pct"),
 }
 
 

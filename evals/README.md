@@ -63,7 +63,7 @@ All commands run from the repository root as `uv run --project evals python -m e
 | `project [--generators ...] [--cases ...] [--reps N]` | Cost projection for a planned run: expected (from `[projection]`) and worst case (`max_tokens` on every call), generation and judging, against `run.max_usd` |
 | `run [--live | --cli] [--generators ...] [--cases ...] [--reps N] [--run-id ID]` | Generate documents. FAKE unless `--live`. Rerunning the same `--run-id` resumes: completed slots are skipped, errored slots retried |
 | `grade [--run-id ID]` | Apply every grader in `evals.graders.ALL_GRADERS` to every stored document -> `scores.jsonl` |
-| `judge [--run-id ID] [--live | --cli]` | Pairwise judge over `judge.pairs` -> `judge.jsonl` (resumable) |
+| `judge [--run-id ID] [--live | --cli] [--only pairwise absolute claims]` | Pairwise judge over `judge.pairs` -> `judge.jsonl`; absolute rubric -> `absolute.jsonl`; claim checker -> `claims.jsonl` (all resumable; default: every judge enabled in `config.toml`) |
 | `report [--run-id ID]` | `runs/<id>/report.md` and `scoreboard/<id>.summary.json` + `.md`; a "Coherence ablation" section when the run has prototypes |
 | `compare RUN_A RUN_B [--fail-on-regression]` | Paired per-metric deltas (B − A) with cluster-bootstrap CIs over cases; flags regressions |
 | `all [--live | --cli] [run options]` | run -> grade -> judge -> report |
@@ -132,9 +132,12 @@ Prices per million tokens are pinned in `config.toml` (verify them before a live
 | P3 sequential flow | 1 per section, strictly in order, each prefix holding the document so far |
 | P4 brief + editor | 1 brief + 1 per section + 1 editor (2 if its JSON needs the one retry) |
 | Pairwise judge | 2 per pair (both orders); through the Message Batches API at 50% when `judge.use_batches` |
+| Absolute rubric | 3 judge-model calls per document (Batches when live) |
+| Claim checker | 1 claims-model (Sonnet) call per document (Batches when live) |
 
-The MVP run (6 dev cases × 3 reps × B0/B1/B2 + 36 pairs judged in both orders) projects at
-about **$6.70 expected, $40 worst case**, under the $15 cap. `python -m evals project` prints
+The MVP run (6 dev cases × 3 reps × B0/B1/B2 + 36 pairs judged in both orders, plus the
+absolute rubric and claim check on all 54 documents) projects at about **$10.80 expected**
+(about $3.25 absolute rubric and $0.80 claim check on top of $6.70), under the $15 cap. `python -m evals project` prints
 the current numbers. Every report splits the measured cost into generation and judging,
 computed from API usage (`calls.jsonl`); judge costs from Batches include the 50% discount.
 
@@ -225,3 +228,24 @@ Baseline output is never cleaned up: the harness only inserts the data blocks (o
 The judge rubric is `evals/judge/rubrics/pairwise.md`; `judge_version` is `judge.version` from
 `config.toml` plus a hash of that file. Results with different judge versions are never
 compared (EVAL-12).
+
+## Absolute rubric and claim checker (EVAL-10, EVAL-11)
+
+- **Absolute rubric** (`judge/absolute.py`, rubrics `judge/rubrics/absolute_common.md` and
+  `absolute_{a,b,c}.md`): six anchored 1–5 criteria in three grouped judge calls per document
+  (a: C1 accuracy vs data, C2 coherence; b: C3 no repetition, C4 formatting; c: C5 tone vs the
+  style guide, C6 instruction adherence). Every score cites evidence; unparseable or
+  out-of-range replies are `parse_error` rows. Floors and diagnosis only: the report shows the
+  share of documents at or below `absolute.floor` (2) on any criterion and documents with C1 = 1
+  (BRD §1.5); `compare` flags those, never the per-criterion means. Version:
+  `judge.version` + a hash of every `absolute_*.md` file.
+- **Claim checker** (`judge/claims.py`, prompt `judge/rubrics/claims.md`): `models.claims`
+  (Sonnet, `effort.claims`) extracts every quantitative or comparative claim from the prose;
+  the harness then re-checks each claim against `truth.json` deterministically wherever it names
+  a truth key with a figure or direction (misattributed, wrong period, wrong direction, wrong
+  value); facts and unmapped claims keep the model's verdict. Metrics: `misattrib`,
+  `misattrib_silent`, `docs_misattrib_silent` (gate ≤ 1% of docs). Version: `claims.version` +
+  the prompt hash. In FAKE mode the "model" is the deterministic label-based `rule_claims`.
+- Both use the shared engine `judge/perdoc.py`: the `LLM` wrapper (fake, `--cli`, live) or the
+  Message Batches API when live with `judge.use_batches`, refusals retried once and recorded as
+  error rows, resumable by `custom_id`. Switch either off with `absolute.enabled` / `claims.enabled`.
