@@ -83,3 +83,12 @@ def test_latest_run_id(tmp_path):
 def test_bad_run_id_rejected(tmp_path):
     with pytest.raises(ValueError):
         RunStore("../escape", tmp_path)
+
+
+def test_result_html_round_trips(tmp_path):
+    from evals.core.storage import result_from_dict, result_to_dict
+    from evals.core.types import GenerationResult
+
+    r = GenerationResult("g", "1", "c", 1, "T", [], [], 0, html="<p>x</p>")
+    assert result_from_dict(result_to_dict(r)).html == "<p>x</p>"
+    assert result_from_dict({k: v for k, v in result_to_dict(r).items() if k != "html"}).html is None

@@ -166,6 +166,7 @@ class GenerationResult:
     wall_ms: int
     markdown: str = ""  # filled by core.render.render_markdown; generators may leave it empty
     link_hosts: list[str] | None = None  # None for baselines
+    html: str | None = None  # HTML the library rendered under its link policy (NFR-26); None for baselines
     warnings: list[str] = field(default_factory=list)
     flagged_numbers: list[tuple[str, str]] = field(default_factory=list)  # (section_id, raw text) a generator flagged
     error: str | None = None  # infra failure or refusal: never scored

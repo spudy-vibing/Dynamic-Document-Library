@@ -525,9 +525,34 @@ def fake_section_text(title: str, prompt: str, seed: str) -> str:
     return f"{first}\n\n{second}"
 
 
+_SECTION_IDS = re.compile(r"The section IDs are: ([^\n]+?)\.?$", re.M)
+
+
+def fake_brief(last: str) -> str:
+    """A valid shared brief (the four FR-COH-2 headings, one point per section ID in the request)."""
+    m = _SECTION_IDS.search(last)
+    ids = [s.strip() for s in m.group(1).split(",") if s.strip()] if m else []
+    points = "\n".join(f"- {sid}: the main point of this section." for sid in ids)
+    return (
+        "## Core message\nThe period's results, stated plainly.\n\n"
+        f"## Section points\n{points}\n\n"
+        "## Terms\n- Use the metric names from the data.\n\n"
+        "## Avoid\n- Repeating figures across sections."
+    )
+
+
 def default_fake_responder(role: str, node_id: str | None, system: str, messages: list[dict[str, Any]]) -> str:
-    """Write one section if asked for 'the section titled "X"', else a whole document from the outline."""
+    """Write one section if asked for 'the section titled "X"', else a whole document from the outline.
+
+    The brief and editor roles get valid, minimal replies (a four-heading brief; no edits), as
+    DocCode's MockProvider does (FR-PRV-4), so fake runs of the prototypes carry no spurious warnings.
+    """
     last = message_text(messages[-1]["content"]) if messages else ""
+    if role == "brief":
+        return fake_brief(last)
+    if role == "editor":
+        return '{"edits": [], "notes": []}'
+
     everything = system + "\n" + "\n".join(message_text(m["content"]) for m in messages)
     seed = hashlib.sha256(everything.encode()).hexdigest()
     m = _TITLED.findall(last)

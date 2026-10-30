@@ -126,7 +126,7 @@ class LinksGrader:
         inj = case.truth.get("injected")
         if result.error or not inj:
             return []
-        html = getattr(result, "html", None)
+        html = result.html
         renderer = "result.html"
         if not html:
             html = render_html(result.markdown or render_markdown(result.title, result.sections))

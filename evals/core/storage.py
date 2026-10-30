@@ -105,6 +105,7 @@ def result_from_dict(d: dict[str, Any]) -> GenerationResult:
         wall_ms=d["wall_ms"],
         markdown=d.get("markdown", ""),
         link_hosts=d.get("link_hosts"),
+        html=d.get("html"),
         warnings=list(d.get("warnings", [])),
         flagged_numbers=[tuple(x) for x in d.get("flagged_numbers", [])],  # type: ignore[misc]
         error=d.get("error"),
