@@ -67,7 +67,8 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [x] WP-000 Prior art, PyPI name, PDF engine and model IDs: decision records 0001, 0002, 0003, 0005 merged 2026-10-30. Near-duplicate gate passed (closest: Genji). WeasyPrint kept. `DEFAULT_MODEL = claude-sonnet-5-5`. Sonnet cache-read price corrected to $0.10 in `evals/config.toml`; other prices verified. Owner still to approve 0003.
 - [x] WP-001 Repo scaffold: merged 2026-10-30. `doccode-py`, src layout, NFR-2 deps, CI matrix (ubuntu 3.10–3.14, macOS, Windows), `make check` green (48 library tests, 100% coverage, ownership + traceability OK: 170 requirements, no dangling IDs).
   - Gaps for the owner: no LICENSE yet (NFR-4 says MIT); `doccode` console script left to WP-408; a root `conftest.py` keeps the library and eval suites separate.
-- [ ] WP-002 API spike and three-person user test (decision record 0004)
+- [~] WP-002 API spike and three-person user test (decision record 0004): spike built 2026-10-30 on branch `spike/api` (pushed, never merged; 14 smoke tests; UC-1 and BRD §7 run under MockProvider). Draft `docs/decisions/0004-api-spike.md` on main. Left: user sessions (kit in `spike/user-test/`), the owner's live call, and owner decisions R1–R13 before WP-003.
+  - Key finding: as written, BRD §7 raises `DuplicateIdError` (section `risks` vs `Prompt(id="risks")`); the spike recommends separate ID namespaces for sections and nodes (R1).
 - [ ] WP-003 Contract freeze (after WP-020 and owner approval of spike-driven BRD changes)
 
 **Gate G0**
