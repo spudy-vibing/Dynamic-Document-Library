@@ -14,11 +14,11 @@ generator = 16000
 judge = 16000
 
 # USD per million tokens. Verify against the official pricing page before a live run.
-# cache_write is the 5-minute cache-write rate (1.25x input).
+# cache_write is the 5-minute cache-write rate (1.25x input). Verified 2026-10-30 (docs/decisions/0005).
 [prices."claude-sonnet-5-5"]
 input = 2.00
 output = 10.00
-cache_read = 0.20
+cache_read = 0.10                 # 0.05x input; verified in decision 0005
 cache_write = 2.50
 
 [prices."claude-opus-5-5"]
