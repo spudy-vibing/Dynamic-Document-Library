@@ -189,6 +189,7 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | Run ID | Date | Mode | Generators | Cost | Result / link |
 | --- | --- | --- | --- | --- | --- |
 | cli-20261030-090220 | 2026-10-30 | **CLI (unofficial)**, 6 dev cases × 1 rep | B0, B1, B2 + pairwise judge | $0 billed (subscription); $1.50 API-equivalent | 18 docs, 24 judge calls, 0 errors. Found and fixed 2 grader bugs (T4 false positives; attachment figures not counted as supported). Remaining UNR is correct arithmetic (pp deltas) — open question. Judge: B0 beat B1 0.92, B2 beat B1 0.75; length bias flagged for B0 (r=0.50, n=6). Report: `evals/runs/cli-20261030-090220/report.md` (not committed) |
+| cli-g0-shakeout | 2026-10-30 | **CLI (unofficial)**, 24 dev cases × 1 rep | B0–B2, P1–P4 + all judges | $0 billed; ~$89 API-equivalent projected | 168 docs, 0 generation errors. Subscription session limit hit mid-judging: pairwise 146/480, claims 128/168, absolute 0/504 done (resumable). Fixed: CLI fails fast on usage limits; T7 instruction trap no longer counts sentences that quote the injection to refuse it (links grader v2). |
 
 ## Known notes and deviations
 
@@ -213,3 +214,4 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | 2026-10-30 | Owner chose `doccode-py`; repo is on GitHub (Dynamic-Document-Library, public); pushed. |
 | 2026-10-30 | Merged WP-016, WP-001, WP-019, WP-018; spike WP-002 built; owner's second batch of decisions applied (MIT, WeasyPrint, Sonnet default, $175 run cap); GitHub CI green. BRD amendment agent and two simulated spike sessions dispatched. |
 | 2026-10-30 | BRD amendments merged (R1–R12, 0005 fixes, FR-DYN-7 new; 171 requirements). Simulated P2 and P3 spike sessions recorded in 0004 with proposed new items N1–N7 for the owner. Full `--cli` shakeout run (`cli-g0-shakeout`) started. |
+| 2026-10-30 | Branch clean-up (only `main` and `spike/api` remain). Full `--cli` shakeout: generation complete; judges partly blocked by the subscription limit; two harness fixes. |
