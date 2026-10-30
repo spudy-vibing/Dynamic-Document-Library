@@ -20,7 +20,9 @@ evals/
   cases/dev/            the dev cases (case.toml + data.json + truth.json + attachments)
   fixtures/             seeded synthetic data generators for the cases
   generators/           b0_oneshot.py, b1_parallel.py, b2_chain.py (+ n0_null.py), common.py
-    prompts/*.md        FROZEN, versioned baseline prompts (see "Baseline prompts" below)
+                        p1_frame.py .. p4_editor.py + coherence.py: the coherence prototypes (WP-017)
+    prompts/*.md        FROZEN, versioned baseline prompts (see "Baseline prompts" below);
+                        p1_frame.md .. p4_editor.md are the prototypes' candidate built-in text
   graders/              deterministic graders (ALL_GRADERS)
   judge/pairwise.py     pairwise judge; rubric in judge/rubrics/pairwise.md
   runner.py             projection, generation, grading, judging
@@ -62,12 +64,13 @@ All commands run from the repository root as `uv run --project evals python -m e
 | `run [--live | --cli] [--generators ...] [--cases ...] [--reps N] [--run-id ID]` | Generate documents. FAKE unless `--live`. Rerunning the same `--run-id` resumes: completed slots are skipped, errored slots retried |
 | `grade [--run-id ID]` | Apply every grader in `evals.graders.ALL_GRADERS` to every stored document -> `scores.jsonl` |
 | `judge [--run-id ID] [--live | --cli] [--only pairwise absolute claims]` | Pairwise judge over `judge.pairs` -> `judge.jsonl`; absolute rubric -> `absolute.jsonl`; claim checker -> `claims.jsonl` (all resumable; default: every judge enabled in `config.toml`) |
-| `report [--run-id ID]` | `runs/<id>/report.md` and `scoreboard/<id>.summary.json` + `.md` |
+| `report [--run-id ID]` | `runs/<id>/report.md` and `scoreboard/<id>.summary.json` + `.md`; a "Coherence ablation" section when the run has prototypes |
 | `compare RUN_A RUN_B [--fail-on-regression]` | Paired per-metric deltas (B − A) with cluster-bootstrap CIs over cases; flags regressions |
 | `all [--live | --cli] [run options]` | run -> grade -> judge -> report |
 
 `grade`, `judge` and `report` default to the most recent run. Defaults for generators are
-B0, B1 and B2; cases, reps and the case set come from `config.toml` (`[run]`).
+B0, B1 and B2 (the prototypes P1-P4 are selected explicitly, see below); cases, reps and the
+case set come from `config.toml` (`[run]`).
 
 ## Live runs (owner only)
 
@@ -124,6 +127,10 @@ Prices per million tokens are pinned in `config.toml` (verify them before a live
 | B0 one-shot | 1 per document |
 | B1 naive parallel | 1 per section, concurrent where dependencies allow |
 | B2 chat chain | 1 per section, each resending the whole conversation so far |
+| P1 frame | 1 per section, as B1 |
+| P2 shared brief | 1 brief + 1 per section |
+| P3 sequential flow | 1 per section, strictly in order, each prefix holding the document so far |
+| P4 brief + editor | 1 brief + 1 per section + 1 editor (2 if its JSON needs the one retry) |
 | Pairwise judge | 2 per pair (both orders); through the Message Batches API at 50% when `judge.use_batches` |
 | Absolute rubric | 3 judge-model calls per document (Batches when live) |
 | Claim checker | 1 claims-model (Sonnet) call per document (Batches when live) |
@@ -133,6 +140,13 @@ absolute rubric and claim check on all 54 documents) projects at about **$10.80 
 (about $3.25 absolute rubric and $0.80 claim check on top of $6.70), under the $15 cap. `python -m evals project` prints
 the current numbers. Every report splits the measured cost into generation and judging,
 computed from API usage (`calls.jsonl`); judge costs from Batches include the 50% discount.
+
+The same MVP size with the prototypes (B0, B1, B2, P1-P4: 126 documents, 10 judge pairs)
+projects at about **$24 expected, $147 worst case** (generation $15.20, of which the
+prototypes $10.30; judging $9). That is above the $15 cap, so the owner raises
+`run.max_usd` for that run or runs the prototypes separately (`--generators b0-oneshot
+b1-parallel p1-frame p2-brief p3-flow p4-editor`: about $21 expected). In `--cli` mode the
+judge runs without Batches, so the API-equivalent figure is about $33.
 
 ## How the model is called (EVAL-21)
 
@@ -153,6 +167,48 @@ computed from API usage (`calls.jsonl`); judge costs from Batches include the 50
   Prompts below the model's minimum cacheable size simply do not cache. Reps of the same
   case that run within the cache lifetime can also read each other's prefix; that affects
   cost and cache-hit numbers only, never the text.
+
+## Coherence prototypes P1-P4 (WP-017, EVAL-4)
+
+Plain-Python prototypes of DocCode's coherence layers (BRD FR-COH-1..5), each B1 plus one
+layer. They never import `doccode`. Their prompt text is the candidate for DocCode's
+built-in frame wording, brief instruction and editor prompt; the G0 ablation (WP-020,
+decision 0006) uses them to choose the default preset per family and to tune that text. The
+ablation never removes a layer by itself.
+
+| Generator | Adds | Approximates | Call pattern |
+|---|---|---|---|
+| `p1-frame` | frame: title, purpose, audience, style and outline (titles and briefs) plus the no-repeat line in the shared prefix; a position line per section | `basic` | as B1 |
+| `p2-brief` | P1 + shared brief: `_brief` runs first (Core message, Section points, Terms, Avoid) and goes into every section's prefix | `report` without the editor | 1 + sections |
+| `p3-flow` | P1 + sequential flow: document order, "the document so far" appended to the prefix, oldest sections cut to their first paragraph above 60,000 characters | `narrative` without the editor | sections, serial |
+| `p4-editor` | P2 + editor: one `_editor` call returns JSON find/replace edits; applied only when `find` matches exactly once in model text, data blocks untouched, change ratio ≤ 0.3, checks still pass | `report` | 1 + sections + 1 |
+
+All four run repetition detection (word 8-grams, threshold 2, FR-COH-5) and record the
+findings as warnings; P4 passes them to the editor and checks again after editing. Applied
+edits, rejected or reverted edits and editor notes are recorded in the result's warnings.
+
+**Request layout (FR-PRV-7).** `system` is the baselines' system prompt. The first user
+message is: frame, data and attachments, the brief (P2/P4), the document so far (P3, one
+block per earlier section), then the per-prompt text (position line and instruction). At
+most two `cache_control` breakpoints: on the last static shared block, and (P3) on the end
+of the document so far. The brief call's prefix is a prefix of every section's, and the
+editor reuses the sections' prefix, so both can read the provider's cache.
+
+Run them, and get the ablation, with:
+
+```sh
+uv run --project evals python -m evals all --generators b0-oneshot b1-parallel p1-frame p2-brief p3-flow p4-editor
+```
+
+The report's **Coherence ablation** section shows, for all cases and for each family: the
+metric values for B1, B0 and each prototype; each prototype's delta against B1 and against
+B0; the per-layer increments (frame = P1 − B1, brief = P2 − P1, flow = P3 − P1, editor =
+P4 − P2); and the pairwise win rates of each prototype against B1 and B0 (pairs in
+`judge.pairs`). The same data is in the scoreboard summary under `ablation`.
+
+In FAKE mode the `FakeLLM` writes neither a valid brief nor editor JSON, so P2 and P4 run
+with brief warnings and an unedited draft; the tests cover the real paths with scripted
+replies.
 
 ## Baseline prompts (owner review)
 

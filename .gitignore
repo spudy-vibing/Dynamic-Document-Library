@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 # Offline (fake-mode) eval summaries are test output, not results
 evals/scoreboard/fake-*
+.claude/worktrees/

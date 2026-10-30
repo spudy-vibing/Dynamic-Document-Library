@@ -7,8 +7,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from evals.core.storage import SCOREBOARD_DIR, RunStore, write_atomic
+from evals.core.cases import load_case
+from evals.core.storage import SCOREBOARD_DIR, RunStore, resolve_case_path, write_atomic
 from evals.core.types import METRICS, MetricDef
+from evals.generators import PROTOTYPES
 from evals.judge import absolute, claims, pairwise, perdoc
 
 FAKE_BANNER = (
@@ -182,7 +184,145 @@ def build_summary(store: RunStore, config: dict[str, Any]) -> dict[str, Any]:
         "judge_errors": sum(1 for r in judge_rows if r.get("status") != "ok"),
         "refusals": refusals,
         "cost": cost_split(store, generators),
+        "ablation": ablation(scores, judge_rows, generators, case_families(m), config),
     }
+
+
+# ---------------------------------------------------------------- coherence ablation (EVAL-4, WP-017)
+
+#: The baselines every prototype is compared with, and the metrics the ablation shows.
+ABLATION_BASELINES = ("b1-parallel", "b0-oneshot")
+ABLATION_METRICS = ("unr", "unr_silent", "xrep", "rep_pairs", "structure", "chatter", "adherence", "data_exact",
+                    "length_ratio", "cost_usd", "cache_hit", "wall_ms")
+ABLATION_QUESTIONS = ("overall", "q1_coherence", "q2_redundancy", "q3_purpose")
+
+
+def case_families(manifest: dict[str, Any]) -> dict[str, str]:
+    """case_id -> family, from the case files the manifest names (the directory name if a case cannot be loaded)."""
+    out = {}
+    for ref in manifest.get("case_paths") or []:
+        path = resolve_case_path(ref)
+        try:
+            case = load_case(path)
+            out[case.id] = case.family
+        except Exception:  # noqa: BLE001 - a moved case must not break the report
+            out[path.name] = path.parent.name
+    return out
+
+
+def ablation(
+    scores: list[dict[str, Any]], judge_rows: list[dict[str, Any]], generators: list[str], families: dict[str, str],
+    config: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Each prototype against B1 and B0, overall and per family: metric values, deltas, layer increments, win rates.
+
+    Deltas are prototype minus baseline on the pooled metric (the same aggregation as the
+    results table). Layer increments compare each prototype with the generator it adds one
+    layer to (``generators.PROTOTYPES``). Win rates use the config judge pairs, restricted
+    to the group's cases. None when the run has no prototype or no baseline.
+    """
+    protos = [g for g in generators if g in PROTOTYPES]
+    bases = [b for b in ABLATION_BASELINES if b in generators]
+    if not protos or not bases:
+        return None
+    shown = bases + protos
+    pairs = [(x, y) for x, y in config["judge"]["pairs"] if x in protos and y in bases]
+    case_ids = sorted({r["case_id"] for r in scores} | {r["case_id"] for r in judge_rows})
+    groups: dict[str, list[str]] = {"all": case_ids}
+    for fam in sorted({families.get(cid, "unknown") for cid in case_ids}):
+        groups[fam] = [cid for cid in case_ids if families.get(cid, "unknown") == fam]
+    layers = [(p, *PROTOTYPES[p]) for p in protos if PROTOTYPES[p][1] in generators]
+    out: dict[str, Any] = {"baselines": bases, "prototypes": protos, "families": {}}
+    for name, ids in groups.items():
+        sel = set(ids)
+        table = metric_table([r for r in scores if r["case_id"] in sel], shown)
+        values = {m: {g: table.get(m, {}).get(g, {"value": None, "n": 0}) for g in shown} for m in ABLATION_METRICS}
+
+        def delta(m: str, a: str, b: str) -> float | None:
+            va, vb = values[m][a]["value"], values[m][b]["value"]
+            return None if va is None or vb is None else va - vb
+
+        rows = [r for r in judge_rows if r["case_id"] in sel]
+        wins = pairwise.summarise(rows, pairs) if pairs and rows else []
+        out["families"][name] = {
+            "cases": ids,
+            "values": values,
+            "deltas": {p: {b: {m: delta(m, p, b) for m in ABLATION_METRICS} for b in bases} for p in protos},
+            "layers": [{"prototype": p, "layer": layer, "over": over,
+                        "deltas": {m: delta(m, p, over) for m in ABLATION_METRICS}}
+                       for p, layer, over in layers],
+            "win_rates": [{"x": w["x"], "y": w["y"], "questions": {q: w["questions"][q] for q in ABLATION_QUESTIONS}}
+                          for w in wins],
+        }
+    return out
+
+
+def fmt_delta(value: float | None, kind: str) -> str:
+    if value is None:
+        return "—"
+    if kind == "pct":
+        return f"{value * 100:+.1f} pp"
+    if kind == "usd":
+        return f"{'+' if value >= 0 else '-'}${abs(value):.4f}"
+    if kind == "ms":
+        return f"{value / 1000:+.1f} s"
+    return f"{value:+.3f}"
+
+
+def _win_cell(r: dict[str, Any] | None) -> str:
+    if not r or r.get("win_rate") is None:
+        return "—"
+    ci = f" ({r['ci'][0]:.2f}–{r['ci'][1]:.2f})" if r.get("ci") else ""
+    return f"{r['win_rate']:.2f}{ci}"
+
+
+def render_ablation(abl: dict[str, Any] | None) -> list[str]:
+    if not abl:
+        return []
+    bases, protos = abl["baselines"], abl["prototypes"]
+    out = ["## Coherence ablation (EVAL-4)", "",
+           "Each prototype adds one coherence layer (FR-COH-1..4) to naive parallel generation: P1 = B1 + frame, "
+           "P2 = P1 + shared brief, P3 = P1 + sequential flow, P4 = P2 + editor. This evidence chooses the default "
+           "preset per family and tunes the built-in prompts at G0 (decision 0006); it never removes a layer by itself.",
+           "", "Δ = prototype − baseline on the pooled metric; the Better column says which sign helps. Win rates are "
+           "the prototype's (both orders must agree; 95% cluster-bootstrap CI over cases).", ""]
+    for name, fam in abl["families"].items():
+        title = "All families" if name == "all" else f"Family `{name}`"
+        out += [f"### {title} ({len(fam['cases'])} case(s))", ""]
+        shown = bases + protos
+        out.append("| Metric | Better | " + " | ".join(shown) + " |")
+        out.append("|---|---|" + "---|" * len(shown))
+        for m in ABLATION_METRICS:
+            d = _metric_def(m)
+            out.append(f"| {d.label} | {d.better} | " + " | ".join(cell(fam["values"][m][g], d.fmt) for g in shown) + " |")
+        out.append("")
+        for b in bases:
+            out.append(f"| Δ vs {b} | Better | " + " | ".join(protos) + " |")
+            out.append("|---|---|" + "---|" * len(protos))
+            for m in ABLATION_METRICS:
+                d = _metric_def(m)
+                out.append(f"| {d.label} | {d.better} | "
+                           + " | ".join(fmt_delta(fam["deltas"][p][b][m], d.fmt) for p in protos) + " |")
+            out.append("")
+        if fam["layers"]:
+            heads = [f"{ly['layer']} ({ly['prototype']} − {ly['over']})" for ly in fam["layers"]]
+            out.append("| Layer increment | Better | " + " | ".join(heads) + " |")
+            out.append("|---|---|" + "---|" * len(heads))
+            for m in ABLATION_METRICS:
+                d = _metric_def(m)
+                out.append(f"| {d.label} | {d.better} | "
+                           + " | ".join(fmt_delta(ly["deltas"][m], d.fmt) for ly in fam["layers"]) + " |")
+            out.append("")
+        if fam["win_rates"]:
+            out.append("| Pair | " + " | ".join(pairwise.QUESTION_LABELS[q] for q in ABLATION_QUESTIONS) + " |")
+            out.append("|---|" + "---|" * len(ABLATION_QUESTIONS))
+            for w in fam["win_rates"]:
+                out.append(f"| {w['x']} vs {w['y']} | "
+                           + " | ".join(_win_cell(w["questions"][q]) for q in ABLATION_QUESTIONS) + " |")
+            out.append("")
+        else:
+            out += ["Not judged: no prototype-vs-baseline pair in judge.pairs was judged in this run.", ""]
+    return out
 
 
 def _metric_def(name: str) -> MetricDef:
@@ -262,6 +402,7 @@ def render_report(summary: dict[str, Any]) -> str:
 
     out += render_absolute(summary, gens)
     out += render_claims(summary, gens)
+    out += render_ablation(summary.get("ablation"))
 
     out += ["## Traps", ""]
     traps = summary["traps"]

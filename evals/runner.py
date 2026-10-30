@@ -33,7 +33,7 @@ from evals.core.types import (
     InfraError,
     RefusalError,
 )
-from evals.generators import GENERATORS, NO_LLM
+from evals.generators import GENERATORS, NO_LLM, PROTOTYPES
 from evals.judge import absolute, claims, pairwise, perdoc
 
 Log = Callable[[str], None]
@@ -225,6 +225,11 @@ def project(
         f"input tokens = prompt characters / {cpt:g}; no prompt-cache discount assumed (conservative)",
         "refusal retries and transient-error retries are not included",
     ]
+    if any(g.name in PROTOTYPES for g in generators):
+        proj.assumptions.append(
+            "prototypes: the _brief and _editor calls are planned like section calls (same expected output); "
+            "P3's prefix grows by each earlier section; the editor's one JSON retry is not included"
+        )
     return proj
 
 
