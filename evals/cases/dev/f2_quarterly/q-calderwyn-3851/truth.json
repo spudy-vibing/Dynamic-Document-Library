@@ -65,6 +65,18 @@
     "revenue_change": {
       "value": -4600000,
       "formula": "revenue_this - revenue_prior"
+    },
+    "gross_margin_change_pp": {
+      "value": 1.2,
+      "formula": "gross_margin_pct - gross_margin_prior_pct"
+    },
+    "active_customers_change": {
+      "value": -52,
+      "formula": "active_customers - active_customers_prior"
+    },
+    "churn_change_pp": {
+      "value": 0.8,
+      "formula": "churn_pct - churn_prior_pct"
     }
   },
   "facts": {

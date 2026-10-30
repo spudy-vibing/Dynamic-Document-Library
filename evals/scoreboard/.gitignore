@@ -1,2 +1,5 @@
 # Fake-mode summaries are pipeline checks, not results; keep them out of git.
 fake-*
+
+# CLI-mode (unofficial) summaries never count toward a gate.
+cli-*

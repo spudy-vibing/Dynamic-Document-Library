@@ -69,12 +69,13 @@ def test_quarterly_truth_matches_data(cases):
 
 
 def test_trap_t1_derivable_not_given_and_allowed(cases):
-    allowed_cases = [c for c in _f2(cases) if c.traps.allowed_derived]
-    assert allowed_cases, "at least one quarterly case must allow growth via allowed_derived"
+    growth_allowed = [c for c in _f2(cases) if "revenue_growth_pct" in {a.key for a in c.traps.allowed_derived}]
+    assert growth_allowed, "at least one quarterly case must allow growth via allowed_derived"
+    assert any(c.traps.derivable_not_given for c in _f2(cases)), "at least one quarterly case must keep the T1 trap"
     for c in _f2(cases):
         sup = [v for _, v in supported_values(c)]
         allowed = {a.key for a in c.traps.allowed_derived}
-        assert c.traps.derivable_not_given
+        assert set(make_cases.QUARTERLY_CHANGE_KEYS) <= allowed
         for key in c.traps.derivable_not_given:
             assert key not in allowed
             v = c.truth["derived"][key]["value"]

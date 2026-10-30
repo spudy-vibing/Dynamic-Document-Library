@@ -16,6 +16,13 @@ FAKE_BANNER = (
     "`FakeLLM`, not a model. Numbers below only show that the pipeline works."
 )
 
+CLI_BANNER = (
+    "> **UNOFFICIAL — Claude Code CLI mode.** Documents and verdicts come from the real models, called "
+    "through headless `claude -p` on a subscription rather than the API. Claude Code adds some context, "
+    "B2's chat history is flattened into one message, and costs are API-equivalent estimates. Use this to "
+    "check prompts, graders and the judge on real text; it never counts toward a gate."
+)
+
 
 # ---------------------------------------------------------------- aggregation
 
@@ -96,7 +103,9 @@ def cost_split(store: RunStore, generators: list[str]) -> dict[str, Any]:
         }
     judge = [c for c in calls if c.get("phase") == "judge"]
     j = {"usd": sum(c["cost_usd"] or 0.0 for c in judge), "calls": len(judge),
-         "unpriced_calls": sum(1 for c in judge if c["cost_usd"] is None)}
+         "unpriced_calls": sum(1 for c in judge if c["cost_usd"] is None),
+         **{k: sum(c.get(k) or 0 for c in judge)
+            for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")}}
     total_gen = sum(v["usd"] for v in gen.values())
     return {"generation": gen, "generation_usd": total_gen, "judge": j, "total_usd": total_gen + j["usd"]}
 
@@ -141,7 +150,9 @@ def render_report(summary: dict[str, Any]) -> str:
     gens = [g["name"] for g in m.get("generators") or []]
     refusals = summary["refusals"]
     out = [f"# Eval run `{summary['run_id']}`", ""]
-    if summary["mode"] != "live":
+    if summary["mode"] == "cli":
+        out += [CLI_BANNER, ""]
+    elif summary["mode"] != "live":
         out += [FAKE_BANNER, ""]
     bad = [g for g in gens if not refusals.get(g, {}).get("comparable", True)]
     if bad:
@@ -235,7 +246,8 @@ def render_report(summary: dict[str, Any]) -> str:
                    f"{c['cache_read_tokens']:,} | {c['cache_write_tokens']:,} | ${c['usd']:.4f} |")
     j = cost["judge"]
     note = " (Batches: 50% applied)" if m.get("judge_batches") else ""
-    out.append(f"| judge{note} | {j['calls']} | | | | | ${j['usd']:.4f} |")
+    out.append(f"| judge{note} | {j['calls']} | {j.get('input_tokens', 0):,} | {j.get('output_tokens', 0):,} | "
+               f"{j.get('cache_read_tokens', 0):,} | {j.get('cache_write_tokens', 0):,} | ${j['usd']:.4f} |")
     out.append(f"| **total** | | | | | | **${cost['total_usd']:.4f}** |")
     out.append(f"\nGeneration ${cost['generation_usd']:.4f} · judging ${j['usd']:.4f}.")
     unpriced = sum(c["unpriced_calls"] for c in cost["generation"].values()) + j["unpriced_calls"]

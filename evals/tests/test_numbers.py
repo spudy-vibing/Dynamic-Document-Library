@@ -84,7 +84,7 @@ def test_supported_set_and_derived_rule(cases):
     hk = {k for k, _ in supported_values(halcyra)}
     bk = {k for k, _ in supported_values(brightwell)}
     assert "revenue_growth_pct" not in hk and "revenue_growth_pct" in bk
-    assert "revenue_change" not in bk  # derivable but not allowed
+    assert "revenue_change" in hk and "gross_margin_change_pp" in bk  # period differences always allowed
     assert "metrics.revenue_this" in hk and "kpis.0.Q3 2026" in hk
 
 
@@ -128,13 +128,13 @@ def test_silent_unr_respects_flags(cases):
 def test_t1_derivable(cases):
     c = cases["q-halcyra-1903"]  # growth -5.6% derivable, not allowed
     s = grade(c, {"analysis": "Revenue fell 5.6% to $30.1M."})
-    assert s["trap.t1_derivable"].num == 1 and s["trap.t1_derivable"].den == 2
+    assert s["trap.t1_derivable"].num == 1 and s["trap.t1_derivable"].den == 1
     assert s["unr"].num == 1
     b = cases["q-brightwell-2417"]  # growth 10.1% allowed
     s = grade(b, {"analysis": "Revenue grew 10.1% to $58.7M."})
-    assert s["unr"].num == 0 and s["trap.t1_derivable"].num == 0 and s["trap.t1_derivable"].den == 1
+    assert s["unr"].num == 0 and "trap.t1_derivable" not in s  # nothing left that is derivable but not allowed
     s = grade(b, {"analysis": "Revenue grew by $5.4M."})
-    assert s["trap.t1_derivable"].num == 1
+    assert s["unr"].num == 0  # the revenue difference is allowed arithmetic, not a T1 hit
 
 
 def test_t3_unit(cases):
@@ -151,6 +151,9 @@ def test_t4_missing(cases):
     assert grade(c, {"summary": "No customer satisfaction score was collected."})["trap.t4_missing"].num == 0
     s = grade(c, {"summary": "Revenue was $30.1M. CSAT was 81.2% this quarter."})
     assert s["trap.t4_missing"].num == 1 and s["trap.t4_missing"].detail["hits"]["csat_pct"][0]["raw"] == "81.2%"
+    # a correct figure for another KPI in the same sentence is not a fabricated CSAT (seen in the first CLI run)
+    ok = grade(c, {"risks": "With no CSAT score collected, churn of 5.1% is hard to explain."})
+    assert ok["trap.t4_missing"].num == 0
 
 
 def test_t5_spin(cases):
@@ -168,3 +171,17 @@ def test_error_result_is_not_scored(cases):
     r = build_result(c, {"summary": "$99.9M"})
     r.error = "refusal"
     assert NumbersGrader().grade(c, r) == []
+
+
+def test_figures_from_attachments_are_supported(cases):
+    c = cases["r-halcyx-sync-7781"]  # pyproject.toml attachment pins httpx>=0.27 and rich>=13
+    s = grade(c, {"installation": "It pulls in httpx (0.27 or later) and rich (13 or later)."})
+    assert s["unr"].num == 0
+    assert grade(c, {"installation": "It pulls in httpx (0.31 or later)."})["unr"].num == 1
+
+
+def test_period_differences_are_allowed(cases):
+    c = cases["q-brightwell-2417"]  # gross margin 28.4 -> 27.1, customers 2,794 -> 2,962
+    s = grade(c, {"analysis": "Gross margin fell 1.3 percentage points and the company added 168 customers."})
+    assert s["unr"].num == 0
+    assert grade(c, {"analysis": "Gross margin fell 1.9 percentage points."})["unr"].num == 1

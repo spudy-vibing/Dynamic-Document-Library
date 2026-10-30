@@ -2,7 +2,7 @@
 
 The single place to see what is done and what is left, across sessions. Read this first at the start of every session; update it at the end.
 
-**Last updated:** 2026-10-30 · **Current stage:** Wave 0 (eval MVP code built and committed; owner decisions made; awaiting the owner's first live run)
+**Last updated:** 2026-10-30 · **Current stage:** Wave 0 (eval MVP code built and committed; owner decisions made; MVP live run deferred by the owner; offline build work next)
 
 ## How to use this file
 
@@ -13,11 +13,11 @@ The single place to see what is done and what is left, across sessions. Read thi
 
 ## Next up
 
-1. **Owner:** review the frozen baseline prompts (`evals/generators/prompts/*.md`) and the judge rubric (`evals/judge/rubrics/pairwise.md`).
-2. **Owner:** check the prices in `evals/config.toml`, then make the first live eval run (about $7 expected, $15 cap):
-   `ANTHROPIC_API_KEY=... uv run --project evals python -m evals project`, then `... all --live`.
-3. **Owner:** name the second person for judge calibration labelling (BRD §1.7, EVAL-13), or ask to switch to owner-only labelling.
-4. **Next build work:** the rest of Wave 0 evals (WP-015..WP-019) and the library-side Wave 0 (WP-000, WP-001, WP-002).
+The MVP live run is **deferred** (owner, 2026-10-30). Work continues offline; the live run is still needed before WP-020 / gate G0.
+
+1. **Next build work (offline, needs the owner's go-ahead):** the rest of Wave 0 evals (WP-015..WP-019) and the library-side Wave 0 (WP-000, WP-001; WP-002 needs three testers).
+2. **Owner:** name the second person for judge calibration labelling (BRD §1.7, EVAL-13), or switch to owner-only labelling.
+3. **Owner, before G0:** review the frozen prompts and rubric, check prices, then run the MVP live run (about $7) or go straight to the G0 run (WP-020, $100–160) with a smoke run first.
 
 ## Open decisions (owner)
 
@@ -46,7 +46,7 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [x] WP-011 Fixtures and the 6 MVP cases (3 quarterly, 2 weekly, 1 README) with traps and `truth.json`; regeneration test. 2026-10-29
 - [x] WP-012 Graders (numbers / silent UNR / traps, 6-gram repetition, structure, chatter, adherence, data blocks, cost), perturbation suite, null baseline, import check. 2026-10-29
 - [x] WP-013 Baselines B0 one-shot, B1 naive parallel, B2 chat chain, with frozen versioned prompts. 2026-10-29
-- [~] WP-014 Pairwise judge (both orders, Batches API), `report`, `compare`. Code done 2026-10-29. Left: the owner's first live run and labelling 20 pairs.
+- [~] WP-014 Pairwise judge (both orders, Batches API), `report`, `compare`. Code done 2026-10-29. Left: the owner's first live run (deferred by the owner, 2026-10-30) and labelling 20 pairs.
   - Evidence: `uv run --project evals pytest` → 226 passed, 2 skipped; offline `python -m evals all` → 54 docs, 819 score rows, 72 judge calls; projection $6.70 expected, $40.17 worst case, $15 cap.
 
 **Rest of Wave 0 evals**
@@ -166,10 +166,13 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 
 | Run ID | Date | Mode | Generators | Cost | Result / link |
 | --- | --- | --- | --- | --- | --- |
-| — | — | — | — | — | No live run yet |
+| cli-20261030-090220 | 2026-10-30 | **CLI (unofficial)**, 6 dev cases × 1 rep | B0, B1, B2 + pairwise judge | $0 billed (subscription); $1.50 API-equivalent | 18 docs, 24 judge calls, 0 errors. Found and fixed 2 grader bugs (T4 false positives; attachment figures not counted as supported). Remaining UNR is correct arithmetic (pp deltas) — open question. Judge: B0 beat B1 0.92, B2 beat B1 0.75; length bias flagged for B0 (r=0.50, n=6). Report: `evals/runs/cli-20261030-090220/report.md` (not committed) |
 
 ## Known notes and deviations
 
+- **Grader fixes from the first CLI run (2026-10-30):** `trap.t4_missing` now counts only unsupported figures near a missing KPI's label; figures stated in attachments count as supported. `compare` no longer flags `wall_ms` (it made the e2e test flaky). Tests: 235 passed, 2 skipped.
+- **Period differences allowed (owner decision, 2026-10-30):** quarterly cases list revenue, gross-margin, churn and customer differences in `allowed_derived`; the growth rate stays the T1 trap. Dev cases regenerated (only `truth.json` derived entries and `case.toml` traps changed). Rescored CLI run: UNR 0.0% for all three baselines. Tests: 236 passed, 2 skipped.
+- **Unofficial CLI mode** (`--cli`, added 2026-10-30): the harness can call the models through headless Claude Code on the owner's subscription, with no API key. Results are marked UNOFFICIAL and never count toward a gate (details in `evals/README.md`). 8 new tests in `evals/tests/test_cli_llm.py`.
 - `evals/tests/__init__.py` was added so `uv run --project evals pytest` works from the project root (2026-10-29).
 - Eval prices for cache writes in `evals/config.toml` are estimates (1.25× input); verify before the first live run.
 - Reps of the same case run within 5 minutes can share a provider prompt cache, which affects cost and cache-hit numbers but not text.
@@ -181,3 +184,6 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | --- | --- |
 | 2026-10-29 | Reviewed and expanded the BRD; wrote the development plan (v1.0 → v1.5); red-team review; coherence layers; readiness review and fixes; eval proposal; HLD; built the eval MVP (WP-010..WP-014 code) and verified it offline. |
 | 2026-10-30 | Owner made all six open decisions (accepted every recommendation): FR-PRV-8 refusals; NFR-26 limitation accepted, strict mode on roadmap; decision record 0008 (no LangGraph); §0.6/§1.5/§1.7 confirmed; spend caps set; `git init` and first commit. |
+| 2026-10-30 | Owner deferred the MVP live run; next work is offline. |
+| 2026-10-30 | Added unofficial `--cli` backend (headless Claude Code, no API key); ran the MVP set once (1 rep); fixed two grader bugs and a flaky compare test. |
+| 2026-10-30 | Owner allowed period differences in quarterly cases; cases regenerated, CLI run rescored, everything committed. |

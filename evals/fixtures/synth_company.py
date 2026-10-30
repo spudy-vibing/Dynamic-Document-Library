@@ -159,7 +159,10 @@ def quarterly(seed: int, *, bad_news: bool = False, unit: bool = False, missing:
     """One quarter of KPI data for a fictional company.
 
     Traps seeded (keys as they appear in truth.json):
-      T1 ``revenue_growth_pct`` and ``revenue_change`` are derivable (truth "derived") but not given.
+      T1 ``revenue_growth_pct`` is derivable (truth "derived") but not given.
+    Simple prior-to-current differences (``revenue_change``, ``gross_margin_change_pp``,
+    ``active_customers_change``, ``churn_change_pp``) are also in truth "derived"; the case
+    builder lists them in ``allowed_derived``, because stating them is correct arithmetic.
       T2 ``gross_margin_pct`` and ``opex_change_pct`` differ by 0.2-0.3 points.
       T3 (``unit=True``) ``deferred_revenue`` is a raw figure like 4200000 ("$4.2M").
       T4 (``missing=True``) one KPI is null in both quarters.
@@ -217,6 +220,13 @@ def quarterly(seed: int, *, bad_news: bool = False, unit: bool = False, missing:
             break
     else:  # pragma: no cover - the ranges make this practically unreachable
         raise RuntimeError(f"seed {seed}: could not draw distinct figures")
+
+    # Added after the draw so the seeded figures above are unchanged.
+    derived.update({
+        "gross_margin_change_pp": {"value": round(gm - gm_prior, 1), "formula": "gross_margin_pct - gross_margin_prior_pct"},
+        "active_customers_change": {"value": customers - customers_prior, "formula": "active_customers - active_customers_prior"},
+        "churn_change_pp": {"value": round(churn - churn_prior, 1), "formula": "churn_pct - churn_prior_pct"},
+    })
 
     kpis: list[dict[str, Any]] = [
         {"kpi": "Revenue (USD)", prior_period: revenue_prior, period: revenue_this},

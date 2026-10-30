@@ -21,8 +21,9 @@ matches a ``_pct`` value and a fraction stored elsewhere. Matching compares magn
 (direction words such as "fell 5.6%" carry the sign; sign errors are the claim
 checker's job) with relative tolerance ``grading.number_tolerance`` (0.5%).
 
-Supported set (EVAL-22): every numeric leaf of data.json, every non-null truth.json
-"values" entry, and truth "derived" values only for keys in ``traps.allowed_derived``.
+Supported set (EVAL-22): every numeric leaf of data.json, every figure stated in an
+attachment (the model was given that text), every non-null truth.json "values" entry, and
+truth "derived" values only for keys in ``traps.allowed_derived``.
 A figure is never supported just because something computed it.
 
 Metrics (model text only):
@@ -32,7 +33,7 @@ Metrics (model text only):
   trap.t1_derivable  per derivable-not-given key that is not allowed: triggered if its derived value appears
   trap.t3_unit       per unit-trap key: triggered if an unsupported figure off by a power of ten (×10 or more)
                      from the key's value appears in a sentence naming the key
-  trap.t4_missing    per missing key: triggered if any figure appears in a sentence naming the key
+  trap.t4_missing    per missing key: triggered if an unsupported figure appears in a sentence naming the key
   trap.t5_spin       bad-news cases: 1 if positive-spin wording appears (heuristic; detail.heuristic = true)
 Trap metrics are num = triggered, den = opportunities, and are emitted only when den > 0.
 """
@@ -191,6 +192,8 @@ def _leaves(node: Any, path: str = "") -> Iterator[tuple[str, float]]:
 def supported_values(case: EvalCase) -> list[tuple[str, float]]:
     """(key, value) pairs a model-written figure may match (EVAL-22)."""
     out = list(_leaves(case.data))
+    for name, text in case.attachments.items():
+        out.extend((f"attachment:{name}", m.value) for m in extract_numbers(text))
     for k, v in case.truth.get("values", {}).items():
         if isinstance(v, (int, float)) and not isinstance(v, bool):
             out.append((k, float(v)))
@@ -348,11 +351,16 @@ class NumbersGrader:
                     hits[k] = found
             out.append(Score("trap.t3_unit", len(hits) / len(t3_keys), len(hits), len(t3_keys), {"hits": hits}))
 
-        # T4: any figure stated next to a missing KPI's label.
+        # T4: an unsupported figure stated next to a missing KPI's label. Supported figures
+        # are other KPIs in the same sentence ("no CSAT score, and churn rose to 5.1%").
         if traps.missing:
             hits = {}
             for k in traps.missing:
-                found = [{"section": sid, "raw": m.raw, "sentence": sent} for sid, sent, m in in_label_sentences(k)]
+                found = [
+                    {"section": sid, "raw": m.raw, "sentence": sent}
+                    for sid, sent, m in in_label_sentences(k)
+                    if not m.supported
+                ]
                 if found:
                     hits[k] = found
             n = len(traps.missing)

@@ -1,6 +1,7 @@
 """Harness-owned model access (EVAL-21, EVALS_PROPOSAL §4.1).
 
-``AnthropicLLM`` wraps the official ``anthropic`` async SDK. ``FakeLLM`` is a
+``AnthropicLLM`` wraps the official ``anthropic`` async SDK. ``ClaudeCodeLLM`` runs
+headless ``claude -p`` on the owner's subscription (unofficial runs only). ``FakeLLM`` is a
 deterministic stand-in for offline runs and tests. Both share the refusal policy:
 a refusal is recorded, retried once, and a second refusal raises ``RefusalError``.
 
@@ -299,6 +300,176 @@ def make_client(*, sync: bool = False) -> Any:
 
     cls = anthropic.Anthropic if sync else anthropic.AsyncAnthropic
     return cls(max_retries=0, timeout=anthropic.Timeout(REQUEST_TIMEOUT_S, connect=10.0))
+
+
+# ---------------------------------------------------------------- claude code (unofficial)
+
+
+#: Flags for every headless call: the eval's own system prompt replaces Claude Code's,
+#: no tools, no settings, MCP servers, slash commands or saved session.
+CLI_FLAGS = (
+    "--print", "--output-format", "json", "--tools", "", "--no-session-persistence",
+    "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands",
+)
+
+CliRunner = Callable[[list[str], str, dict[str, str], str], Awaitable[tuple[int, str, str]]]
+
+
+async def run_cli_process(argv: list[str], stdin: str, env: dict[str, str], cwd: str) -> tuple[int, str, str]:
+    """Run one ``claude -p`` call; returns (exit code, stdout, stderr)."""
+    proc = await asyncio.create_subprocess_exec(
+        *argv, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        env=env, cwd=cwd,
+    )
+    try:
+        out, err = await asyncio.wait_for(proc.communicate(stdin.encode()), timeout=REQUEST_TIMEOUT_S)
+    except asyncio.TimeoutError:
+        proc.kill()
+        await proc.wait()
+        raise
+    return proc.returncode or 0, out.decode(errors="replace"), err.decode(errors="replace")
+
+
+def cli_prompt(messages: list[dict[str, Any]]) -> str:
+    """The single user turn sent to ``claude -p``.
+
+    One user message is sent as is (cache_control markers are dropped). A multi-turn
+    history (B2's chat chain) is flattened into one message, earlier turns tagged by role,
+    because headless mode takes one prompt per call. This is a known difference from API mode.
+    """
+    if len(messages) == 1:
+        return message_text(messages[0]["content"])
+    turns = [f'<turn role="{m["role"]}">\n{message_text(m["content"])}\n</turn>' for m in messages[:-1]]
+    return (
+        "<conversation_so_far>\n" + "\n".join(turns) + "\n</conversation_so_far>\n\n"
+        + message_text(messages[-1]["content"])
+    )
+
+
+def cli_env(max_tokens: int) -> dict[str, str]:
+    """The child environment: the subscription login, never an API key (so nothing is billed to one)."""
+    import os
+
+    env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+    env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(max_tokens)
+    return env
+
+
+class ClaudeCodeLLM(_BaseLLM):
+    """UNOFFICIAL backend: each call is one headless ``claude -p`` run on the owner's
+    Claude Code subscription. No API key, nothing billed per token.
+
+    Differences from ``AnthropicLLM`` (why results never count toward a gate):
+    Claude Code adds some context of its own (about 600 tokens), ``max_tokens`` is set
+    through ``CLAUDE_CODE_MAX_OUTPUT_TOKENS``, multi-turn histories are flattened
+    (``cli_prompt``), cache breakpoints are Claude Code's, refusal categories are not
+    reported, and ``cost_usd`` is the API-equivalent price of the reported tokens.
+    The served model is still asserted, from ``modelUsage``.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        effort: str,
+        max_tokens: int,
+        config: dict[str, Any] | None = None,
+        *,
+        limiter: asyncio.Semaphore | None = None,
+        executable: str = "claude",
+        runner: CliRunner = run_cli_process,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        backoff_s: float = DEFAULT_BACKOFF_S,
+        sleep: Sleep = asyncio.sleep,
+    ) -> None:
+        self.model = model
+        self.effort = effort
+        self.max_tokens = max_tokens
+        self.config = config if config is not None else load_config()
+        self.limiter = limiter
+        self.executable = executable
+        self.runner = runner
+        self.max_attempts = max_attempts
+        self.backoff_s = backoff_s
+        self.sleep = sleep
+        self.calls = []
+        self.requests: list[dict[str, Any]] = []
+
+    def argv(self, system: str) -> list[str]:
+        return [self.executable, *CLI_FLAGS, "--model", self.model, "--effort", self.effort, "--system-prompt", system]
+
+    async def _run(self, argv: list[str], prompt: str, env: dict[str, str]) -> tuple[int, str, str]:
+        import tempfile
+
+        with tempfile.TemporaryDirectory(prefix="evals-cli-") as cwd:  # no CLAUDE.md or project files nearby
+            if self.limiter is not None:
+                async with self.limiter:
+                    return await self.runner(argv, prompt, env, cwd)
+            return await self.runner(argv, prompt, env, cwd)
+
+    async def _call(
+        self, *, role: str, node_id: str | None, system: str, messages: list[dict[str, Any]], max_tokens: int
+    ) -> tuple[str, CallRecord]:
+        build_params(model=self.model, effort=self.effort, max_tokens=max_tokens, system=system, messages=messages)
+        argv, prompt, env = self.argv(system), cli_prompt(messages), cli_env(max_tokens)
+        self.requests.append({"argv": argv, "prompt": prompt})
+        busy_ms = 0
+        for attempt in range(1, self.max_attempts + 1):
+            t0 = time.perf_counter()
+            reason = ""
+            try:
+                code, out, err = await self._run(argv, prompt, env)
+                data = json.loads(out) if out.strip() else {}
+            except (asyncio.TimeoutError, OSError, json.JSONDecodeError) as exc:
+                code, data, err, reason = -1, {}, "", f"{type(exc).__name__}: {exc}"
+            busy_ms += int((time.perf_counter() - t0) * 1000)
+            ok = code == 0 and data.get("type") == "result" and not data.get("is_error")
+            if ok:
+                return data.get("result") or "", self._record(data, role=role, node_id=node_id,
+                                                              latency_ms=busy_ms, attempts=attempt)
+            status = data.get("api_error_status")
+            # timeouts, unreadable output and 429/529/5xx are retried; a CLI usage error or a
+            # failed login (non-zero exit, no API status) is not, so it fails fast
+            transient = reason != "" or status in TRANSIENT_STATUS or (isinstance(status, int) and status >= 500)
+            if transient and attempt < self.max_attempts:
+                delay = min(MAX_BACKOFF_S, self.backoff_s * 2 ** (attempt - 1)) * (0.5 + random.random() / 2)
+                await self.sleep(delay)
+                continue
+            self.calls.append(
+                failed_record(role=role, node_id=node_id, model=self.model, effort=self.effort,
+                              latency_ms=busy_ms, attempts=attempt, config=self.config)
+            )
+            detail = reason or str(data.get("result") or err.strip()[-300:] or f"exit code {code}")
+            raise InfraError(f"claude -p failed after {attempt} attempt(s) (status {status}): {detail}")
+        raise AssertionError("unreachable")  # pragma: no cover
+
+    def _record(self, data: dict[str, Any], *, role: str, node_id: str | None, latency_ms: int, attempts: int) -> CallRecord:
+        usage = data.get("usage") or {}
+        tok = {
+            "input_tokens": int(usage.get("input_tokens") or 0),
+            "output_tokens": int(usage.get("output_tokens") or 0),
+            "cache_read_tokens": int(usage.get("cache_read_input_tokens") or 0),
+            "cache_write_tokens": int(usage.get("cache_creation_input_tokens") or 0),
+        }
+        models = sorted((data.get("modelUsage") or {}).keys())
+        served = models[0] if len(models) == 1 else ",".join(models) or None
+        stop = data.get("stop_reason")
+        status = "refusal" if stop == "refusal" else "ok"
+        if served != self.model:
+            status = "failed"
+        return CallRecord(
+            role=role,
+            node_id=node_id,
+            status=status,  # type: ignore[arg-type]
+            requested_model=self.model,
+            served_model=served,
+            effort=self.effort,
+            stop_reason=stop,
+            refusal_category=None,
+            latency_ms=latency_ms,
+            attempts=attempts,
+            cost_usd=cost_usd(self.model, config=self.config, **tok),
+            **tok,
+        )
 
 
 # ---------------------------------------------------------------- fake

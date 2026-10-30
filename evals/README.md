@@ -59,12 +59,12 @@ All commands run from the repository root as `uv run --project evals python -m e
 | Command | What it does |
 |---|---|
 | `project [--generators ...] [--cases ...] [--reps N]` | Cost projection for a planned run: expected (from `[projection]`) and worst case (`max_tokens` on every call), generation and judging, against `run.max_usd` |
-| `run [--live] [--generators ...] [--cases ...] [--reps N] [--run-id ID]` | Generate documents. FAKE unless `--live`. Rerunning the same `--run-id` resumes: completed slots are skipped, errored slots retried |
+| `run [--live | --cli] [--generators ...] [--cases ...] [--reps N] [--run-id ID]` | Generate documents. FAKE unless `--live`. Rerunning the same `--run-id` resumes: completed slots are skipped, errored slots retried |
 | `grade [--run-id ID]` | Apply every grader in `evals.graders.ALL_GRADERS` to every stored document -> `scores.jsonl` |
-| `judge [--run-id ID] [--live]` | Pairwise judge over `judge.pairs` -> `judge.jsonl` (resumable) |
+| `judge [--run-id ID] [--live | --cli]` | Pairwise judge over `judge.pairs` -> `judge.jsonl` (resumable) |
 | `report [--run-id ID]` | `runs/<id>/report.md` and `scoreboard/<id>.summary.json` + `.md` |
 | `compare RUN_A RUN_B [--fail-on-regression]` | Paired per-metric deltas (B − A) with cluster-bootstrap CIs over cases; flags regressions |
-| `all [--live] [run options]` | run -> grade -> judge -> report |
+| `all [--live | --cli] [run options]` | run -> grade -> judge -> report |
 
 `grade`, `judge` and `report` default to the most recent run. Defaults for generators are
 B0, B1 and B2; cases, reps and the case set come from `config.toml` (`[run]`).
@@ -88,6 +88,32 @@ submitted is collected rather than paid for again.
 **Do not commit live run data.** `evals/runs/` is gitignored. Only the summaries under
 `evals/scoreboard/` are committed (FAKE summaries, `fake-*`, are ignored there too). Held-out
 runs commit aggregate summaries only.
+
+## Unofficial runs through Claude Code (`--cli`, no key)
+
+`--cli` sends every generator and judge call through headless Claude Code (`claude -p`) on
+the owner's subscription, so no API key is needed and nothing is billed per token (it uses
+the subscription's usage allowance). Run IDs start with `cli-`.
+
+```sh
+uv run --project evals python -m evals all --cli --reps 1
+```
+
+Each call replaces Claude Code's system prompt with the eval's (`--system-prompt`), turns
+tools off (`--tools ""`), loads no settings, MCP servers or slash commands, runs in an empty
+temporary directory, sets `--model` and `--effort` from `config.toml`, sets `max_tokens`
+through `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, and strips `ANTHROPIC_API_KEY` from the child
+environment. The served model is still asserted and refusals are still error rows.
+
+It is **not** equivalent to `--live`, so its results never count toward a gate:
+- Claude Code adds some context of its own to every call (a few hundred to about a thousand tokens).
+- B2's chat history is flattened into one user message (headless mode takes one prompt per call).
+- Prompt caching follows Claude Code's own breakpoints; refusal categories are not reported.
+- `cost_usd` is the API-equivalent price of the reported tokens, not a bill; the judge runs
+  one call per order (no Batches).
+
+Use it to check the prompts, graders and judge rubric on real model text before paying for a
+live run. `judge --cli` only accepts a `cli-` run; `cli-*` summaries are gitignored.
 
 ## What costs what
 

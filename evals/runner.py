@@ -15,7 +15,7 @@ from datetime import datetime
 from typing import Any, Callable, Iterable
 
 from evals.core.cases import load_case, load_case_set
-from evals.core.llm import AnthropicLLM, FakeLLM, ServedModelMismatch, make_client
+from evals.core.llm import AnthropicLLM, ClaudeCodeLLM, FakeLLM, ServedModelMismatch, make_client
 from evals.core.storage import (
     RunStore,
     case_path_ref,
@@ -78,6 +78,17 @@ def cases_from_manifest(manifest: dict[str, Any]) -> list[EvalCase]:
 
 def new_run_id(mode: str) -> str:
     return f"{mode}-{datetime.now():%Y%m%d-%H%M%S}"
+
+
+class MissingCli(RuntimeError):
+    """A --cli run without the ``claude`` executable on PATH."""
+
+
+def require_cli() -> None:
+    import shutil
+
+    if shutil.which("claude") is None:
+        raise MissingCli("--cli needs the Claude Code CLI (`claude`) on PATH, logged in to a subscription")
 
 
 def require_key() -> None:
@@ -148,7 +159,10 @@ def visible_chars(section: Any) -> int:
     return words * 6
 
 
-def project(cases: list[EvalCase], generators: list[Generator], reps: int, config: dict[str, Any], *, judge: bool = True) -> Projection:
+def project(
+    cases: list[EvalCase], generators: list[Generator], reps: int, config: dict[str, Any], *,
+    judge: bool = True, batches: bool | None = None,
+) -> Projection:
     """Expected cost uses [projection] (no prompt-cache discount); worst case uses max_tokens on every call."""
     proj_cfg = config["projection"]
     cpt = float(proj_cfg["chars_per_token"])
@@ -178,7 +192,8 @@ def project(cases: list[EvalCase], generators: list[Generator], reps: int, confi
         names = {g.name for g in generators}
         jm = config["models"]["judge"]
         jp = _price(config, jm)
-        factor = pairwise.BATCH_COST_FACTOR if config["judge"].get("use_batches") else 1.0
+        use_batches = config["judge"].get("use_batches") if batches is None else batches
+        factor = pairwise.BATCH_COST_FACTOR if use_batches else 1.0
         j_out = int(proj_cfg["judge_output_tokens"])
         j_max = int(config["max_tokens"]["judge"])
         for x, y in config["judge"]["pairs"]:
@@ -253,8 +268,12 @@ def error_result(g: Generator, case: EvalCase, rep: int, llm: LLM, wall_ms: int,
     )
 
 
-def make_llm_factory(config: dict[str, Any], *, live: bool, client: Any = None, limiter: asyncio.Semaphore | None = None) -> Callable[[], LLM]:
+def make_llm_factory(
+    config: dict[str, Any], *, live: bool, cli: bool = False, client: Any = None, limiter: asyncio.Semaphore | None = None
+) -> Callable[[], LLM]:
     model, effort, mt = config["models"]["generator"], config["effort"]["generator"], config["max_tokens"]["generator"]
+    if cli:
+        return lambda: ClaudeCodeLLM(model, effort, mt, config, limiter=limiter)
     if not live:
         return lambda: FakeLLM(model, effort, mt, config)
     return lambda: AnthropicLLM(model, effort, mt, config, client=client, limiter=limiter)
@@ -268,6 +287,7 @@ async def run_generation(
     config: dict[str, Any],
     *,
     live: bool = False,
+    cli: bool = False,
     client: Any = None,
     make_llm: Callable[[], LLM] | None = None,
     log: Log = print,
@@ -278,7 +298,7 @@ async def run_generation(
     if owned:
         client = make_client()
     limiter = asyncio.Semaphore(conc)  # bounds in-flight API calls across all slots
-    make_llm = make_llm or make_llm_factory(config, live=live, client=client, limiter=limiter)
+    make_llm = make_llm or make_llm_factory(config, live=live, cli=cli, client=client, limiter=limiter)
     slot_sem = asyncio.Semaphore(conc)
     slots = [
         (g, case, rep)
@@ -396,6 +416,7 @@ async def judge_run(
     config: dict[str, Any],
     *,
     live: bool = False,
+    cli: bool = False,
     client: Any = None,
     log: Log = print,
     poll_s: float = 30.0,
@@ -413,21 +434,28 @@ async def judge_run(
     if owned:
         client = make_client()
     try:
-        await _judge_jobs(jobs, store, config, jv, live=live, client=client, log=log, poll_s=poll_s)
+        await _judge_jobs(jobs, store, config, jv, live=live, cli=cli, client=client, log=log, poll_s=poll_s)
     finally:
         if owned:
             await client.close()
-    store.touch_manifest(judge_version=jv, judged_at=now_iso(), judge_mode="live" if live else "fake",
+    store.touch_manifest(judge_version=jv, judged_at=now_iso(), judge_mode="live" if live else "cli" if cli else "fake",
                          judge_batches=bool(live and config["judge"].get("use_batches")))
     return {"pairs": len(tasks), "orders": len(jobs), "skipped": len(skipped)}
 
 
 async def _judge_jobs(
     jobs: list[pairwise.JudgeJob], store: RunStore, config: dict[str, Any], jv: str, *,
-    live: bool, client: Any, log: Log, poll_s: float,
+    live: bool, client: Any, log: Log, poll_s: float, cli: bool = False,
 ) -> None:
     if jobs:
-        if live and config["judge"].get("use_batches"):
+        if cli:  # one headless call per order; batches do not apply
+            limiter = asyncio.Semaphore(int(config["run"]["max_concurrency"]))
+            jm, je, jt = config["models"]["judge"], config["effort"]["judge"], config["max_tokens"]["judge"]
+            await pairwise.judge_with_llm(
+                jobs, lambda: ClaudeCodeLLM(jm, je, jt, config, limiter=limiter), store, jv,
+                concurrency=int(config["run"]["max_concurrency"]),
+            )
+        elif live and config["judge"].get("use_batches"):
             await pairwise.judge_with_batches(jobs, client, config, store, jv, poll_s=poll_s, log=log)
         elif live:
             limiter = asyncio.Semaphore(int(config["run"]["max_concurrency"]))

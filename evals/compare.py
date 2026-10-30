@@ -70,7 +70,14 @@ def direction(metric: str) -> str | None:
     return None
 
 
+#: Reported in the comparison but never flagged: wall time depends on machine load and
+#: network, so two identical runs can differ by chance.
+NOT_GATED = frozenset({"wall_ms"})
+
+
 def is_regression(metric: str, d: dict[str, Any]) -> bool:
+    if metric in NOT_GATED:
+        return False
     better = direction(metric)
     lo, hi = d["ci"]
     if better == "lower":

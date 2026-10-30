@@ -3,6 +3,8 @@
 Commands: project, run, grade, judge, report, compare, all. Every command defaults to
 FAKE mode (FakeLLM, no key, no network); ``--live`` uses the owner's ANTHROPIC_API_KEY
 and refuses to start when the projected cost exceeds run.max_usd (EVAL-18, EVAL-20).
+``--cli`` runs every call through headless Claude Code on the owner's subscription: no
+API key and no per-token bill, but the results are UNOFFICIAL and never count toward a gate.
 """
 
 from __future__ import annotations
@@ -43,7 +45,9 @@ def parser() -> argparse.ArgumentParser:
     for name, help_ in (("run", "generate documents"), ("all", "run, grade, judge, report")):
         p = sub.add_parser(name, help=help_)
         _selection(p)
-        p.add_argument("--live", action="store_true", help="call the real API with ANTHROPIC_API_KEY")
+        backend = p.add_mutually_exclusive_group()
+        backend.add_argument("--live", action="store_true", help="call the real API with ANTHROPIC_API_KEY")
+        backend.add_argument("--cli", action="store_true", help="UNOFFICIAL: call the model through headless Claude Code (subscription)")
         p.add_argument("--run-id", help="resume this run, or name a new one")
         _common(p)
 
@@ -51,7 +55,9 @@ def parser() -> argparse.ArgumentParser:
         p = sub.add_parser(name, help=help_)
         p.add_argument("--run-id", help="default: the most recent run")
         if name == "judge":
-            p.add_argument("--live", action="store_true", help="judge with the real API")
+            backend = p.add_mutually_exclusive_group()
+            backend.add_argument("--live", action="store_true", help="judge with the real API")
+            backend.add_argument("--cli", action="store_true", help="UNOFFICIAL: judge through headless Claude Code")
         _common(p)
 
     p = sub.add_parser("compare", help="paired per-metric deltas between two runs")
@@ -89,7 +95,12 @@ def cmd_project(args: argparse.Namespace, config: dict[str, Any]) -> int:
 
 def cmd_run(args: argparse.Namespace, config: dict[str, Any]) -> RunStore:
     cases, gens, reps, case_set = _plan(args, config)
-    mode = "live" if args.live else "fake"
+    mode = "live" if args.live else "cli" if args.cli else "fake"
+    if args.cli:
+        runner.require_cli()
+        proj = runner.project(cases, gens, reps, config, batches=False)  # CLI mode judges one call at a time
+        print(proj.format())
+        print("CLI mode: billed to the Claude Code subscription, not per token; the figures above are the API-equivalent price.\n")
     if args.live:
         runner.require_key()
         proj = runner.project(cases, gens, reps, config)
@@ -98,7 +109,7 @@ def cmd_run(args: argparse.Namespace, config: dict[str, Any]) -> RunStore:
     store = RunStore(args.run_id or runner.new_run_id(mode), args.runs_dir)
     store.open_manifest(runner.build_manifest(cases, gens, reps, config, mode=mode, case_set=case_set))
     print(f"run {store.run_id} ({mode.upper()} mode): {len(gens)} generator(s) x {len(cases)} case(s) x {reps} rep(s)")
-    counts = asyncio.run(runner.run_generation(store, cases, gens, reps, config, live=args.live))
+    counts = asyncio.run(runner.run_generation(store, cases, gens, reps, config, live=args.live, cli=args.cli))
     print(f"generated {counts['ok']} document(s), {counts['errors']} error(s); {store.path}")
     return store
 
@@ -118,10 +129,12 @@ def cmd_grade(args: argparse.Namespace, config: dict[str, Any], store: RunStore 
 def cmd_judge(args: argparse.Namespace, config: dict[str, Any], store: RunStore | None = None) -> RunStore:
     store = store or _store(args, args.run_id)
     mode = store.read_manifest().get("mode")
-    if args.live and mode != "live":
-        raise SystemExit(f"run {store.run_id} is a {mode} run; judging it live would spend money on fake documents")
-    if not args.live and mode == "live":
-        raise SystemExit(f"run {store.run_id} is live; judge it with --live (a fake judge would mislabel the results)")
+    wanted = "live" if args.live else "cli" if args.cli else "fake"
+    if wanted != mode:
+        flag = {"live": "--live", "cli": "--cli", "fake": "no backend flag"}[mode]
+        raise SystemExit(f"run {store.run_id} is a {mode} run; judge it with {flag} (mixing backends would mislabel the results)")
+    if args.cli:
+        runner.require_cli()
     manifest = store.read_manifest()
     cases = runner.cases_from_manifest(manifest)
     if args.live:
@@ -131,7 +144,7 @@ def cmd_judge(args: argparse.Namespace, config: dict[str, Any], store: RunStore 
             proj = runner.judge_only(runner.project(cases, gens, int(manifest["reps"]), config))
             print(proj.format(), "\n")
             runner.check_budget(proj)
-    counts = asyncio.run(runner.judge_run(store, cases, config, live=args.live))
+    counts = asyncio.run(runner.judge_run(store, cases, config, live=args.live, cli=args.cli))
     print(f"judged run {store.run_id}: {counts['orders']} order(s) judged this time, {counts['skipped']} pair slot(s) skipped")
     return store
 
@@ -177,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
             cmd_grade(args, config, store)
             cmd_judge(args, config, store)
             cmd_report(args, config, store)
-    except (runner.BudgetExceeded, runner.MissingKey) as e:
+    except (runner.BudgetExceeded, runner.MissingKey, runner.MissingCli) as e:
         print(f"refusing to start: {e}", file=sys.stderr)
         return 2
     return 0
