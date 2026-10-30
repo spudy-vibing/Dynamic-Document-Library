@@ -60,6 +60,21 @@ floor = 2                         # a score at or below this is a floor miss (BR
 version = "c1"                    # bump when the claims model, effort or checking logic changes
 enabled = true
 
+[calibration]
+# Judge calibration against human labels (WP-018, EVAL-13, EVALS_PROPOSAL §6.3).
+seed = 20261030                   # sampling seed for `label export` (--seed overrides)
+pairs = 40                        # pairs per pack, stratified by judge pair, spread over families and cases
+documents = 20                    # documents per pack, stratified by generator
+allowed_case_sets = ["dev"]       # packs never come from held-out runs (EVALS_PROPOSAL §5.3)
+exclude_generators = ["n0-null"]  # the null baseline is a leniency check, not worth human time
+min_pairwise_labels = 40          # labelled and judged pairs needed (EVAL-13)
+min_absolute_labels = 20          # labelled and judged documents needed (EVAL-13)
+recalibration_min_labels = 10     # of each kind, with `calibrate --recalibration` (judge model or rubric changed)
+pairwise_agreement = 0.75         # judge vs human majority on non-tie items, per gated question
+gated_questions = ["overall"]     # the verdict the win-rate gates use; other questions reported, not gated
+absolute_kappa = 0.6              # quadratic-weighted kappa per criterion; below it: reported, not gated
+bootstrap_resamples = 10000       # cluster bootstrap over cases for every CI
+
 [run]
 case_set = "dev"                  # evals/cases/<case_set>/
 reps = 3

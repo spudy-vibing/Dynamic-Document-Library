@@ -185,7 +185,21 @@ def build_summary(store: RunStore, config: dict[str, Any]) -> dict[str, Any]:
         "refusals": refusals,
         "cost": cost_split(store, generators),
         "ablation": ablation(scores, judge_rows, generators, case_families(m), config),
+        "calibration": calibration_info(store),
     }
+
+
+def calibration_info(store: RunStore) -> dict[str, Any] | None:
+    """The run's last ``calibrate`` result (WP-018), marked stale when the judge versions changed since."""
+    from evals.calibration.calibrate import load_calibration
+
+    cal = load_calibration(store)
+    if cal is None:
+        return None
+    m = store.read_manifest()
+    cal["stale"] = (cal.get("judge_version") != m.get("judge_version")
+                    or cal.get("absolute_version") != m.get("absolute_version"))
+    return cal
 
 
 # ---------------------------------------------------------------- coherence ablation (EVAL-4, WP-017)
@@ -403,6 +417,7 @@ def render_report(summary: dict[str, Any]) -> str:
     out += render_absolute(summary, gens)
     out += render_claims(summary, gens)
     out += render_ablation(summary.get("ablation"))
+    out += render_calibration(summary.get("calibration"))
 
     out += ["## Traps", ""]
     traps = summary["traps"]
@@ -503,6 +518,19 @@ def render_claims(summary: dict[str, Any], gens: list[str]) -> list[str]:
     out.append("")
     if info.get("errors"):
         out += [f"Claim checks still failing (refusals, infra, unparseable replies; excluded): {info['errors']}", ""]
+    return out
+
+
+def render_calibration(cal: dict[str, Any] | None) -> list[str]:
+    """Judge calibration section (EVAL-13): only when `python -m evals calibrate` has run on this run."""
+    if not cal:
+        return []
+    from evals.calibration.calibrate import render_section
+
+    out = render_section(cal)
+    if cal.get("stale"):
+        out[1:1] = ["", "> **Stale:** the judge or absolute-rubric version changed after this calibration; "
+                        "rerun `python -m evals calibrate`."]
     return out
 
 

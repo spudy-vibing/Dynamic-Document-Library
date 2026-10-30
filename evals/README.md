@@ -26,6 +26,7 @@ evals/
                         p1_frame.md .. p4_editor.md are the prototypes' candidate built-in text
   graders/              deterministic graders (ALL_GRADERS)
   judge/pairwise.py     pairwise judge; rubric in judge/rubrics/pairwise.md
+  calibration/          judge calibration against human labels (WP-018): packs, label import, agreement
   runner.py             projection, generation, grading, judging
   report.py compare.py  report.md + scoreboard summary; run-to-run comparison
   scoreboard/           committed run summaries (<run_id>.summary.json, <run_id>.md)
@@ -135,6 +136,9 @@ All commands run from the repository root as `uv run --project evals python -m e
 | `report [--run-id ID]` | `runs/<id>/report.md` and `scoreboard/<id>.summary.json` + `.md`; a "Coherence ablation" section when the run has prototypes |
 | `compare RUN_A RUN_B [--fail-on-regression]` | Paired per-metric deltas (B − A) with cluster-bootstrap CIs over cases; flags regressions |
 | `all [--live | --cli] [run options]` | run -> grade -> judge -> report |
+| `label export [--run-id ID] [--seed S] [--pairs N] [--documents N] [--out DIR]` | Sample a blinded labelling pack from a run (see "Judge calibration") |
+| `label import FILE [--labeller ID] [--replace] [--allow-missing]` | Validate one labeller's labels (JSON from the page, or the filled-in CSV) and store them in the run |
+| `calibrate [--run-id ID] [--recalibration] [--labellers ...] [--fail-on-miss]` | Judge-vs-human and human-vs-human agreement against the EVAL-13 thresholds -> `calibration.md`/`.json`; `report` then adds a calibration section |
 
 `grade`, `judge` and `report` default to the most recent run. Defaults for generators are
 B0, B1 and B2 (the prototypes P1-P4 are selected explicitly, see below); cases, reps and the
@@ -381,3 +385,97 @@ compared (EVAL-12).
 - Both use the shared engine `judge/perdoc.py`: the `LLM` wrapper (fake, `--cli`, live) or the
   Message Batches API when live with `judge.use_batches`, refusals retried once and recorded as
   error rows, resumable by `custom_id`. Switch either off with `absolute.enabled` / `claims.enabled`.
+
+## Judge calibration (WP-018, EVAL-13)
+
+Before the judge counts at a gate, it must agree with humans (EVALS_PROPOSAL §6.3, BRD EVAL-13):
+**≥ 75% agreement with the human majority on non-tie pairwise items** and **quadratic-weighted
+κ ≥ 0.6 per absolute criterion**, against at least **40 labelled pairs and 20 labelled
+documents** (at least 10 of each after a judge model or rubric change). The owner plus one other
+person label for about 3 hours (BRD §1.7). Labels come only from dev runs; packs are never
+exported from a held-out run (`calibration.allowed_case_sets`). Settings: `[calibration]` in
+`config.toml`.
+
+### Owner's workflow
+
+```sh
+# 1. a live dev run (or --cli for a dry run), judged: B0-B2 and the prototypes
+uv run --project evals python -m evals all --live --generators b0-oneshot b1-parallel b2-chain p1-frame p2-brief p3-flow p4-editor
+
+# 2. export one blinded pack (40 pairs + 20 documents by default; seeded)
+uv run --project evals python -m evals label export --run-id <run_id>
+#    -> evals/runs/<run_id>/calibration/packs/<pack_id>/{pack.html, pack.json, pack.md, labels.csv}
+
+# 3. each labeller opens pack.html in a browser (offline, one file), enters a labeller ID,
+#    labels every item and clicks "Download labels JSON". Progress is kept in the browser;
+#    "Load labels…" resumes from a saved file. Without a browser: read pack.md, fill labels.csv.
+
+# 4. import each labeller's file (one file per labeller; the IDs must differ)
+uv run --project evals python -m evals label import labels-<pack_id>-owner.json
+uv run --project evals python -m evals label import labels-<pack_id>-alex.json
+uv run --project evals python -m evals label import labels.csv --labeller owner   # CSV fallback
+
+# 5. compute agreement -> runs/<id>/calibration.md and .json, status into the manifest
+uv run --project evals python -m evals calibrate --run-id <run_id>
+uv run --project evals python -m evals report --run-id <run_id>   # adds "Judge calibration" to the report
+```
+
+Both labellers label the **same pack**: export once and hand the same folder to both. Give
+labellers only the pack folder. The key that maps items back to generators stays in
+`runs/<id>/calibration/keys/` and must not be shared.
+
+### The pack (blinding)
+
+- **Sampling.** Pairs come from the run's configured judge pairs (`judge.pairs` with both
+  generators in the run), an equal share per generator pair; documents an equal share per
+  generator (`n0-null` excluded). Within each share, picks spread over cases and families as
+  evenly as the run allows. Sampling is seeded (`calibration.seed`, `--seed`): the same run,
+  seed and sizes give the same pack (`pk-<hash>`). Pairs need no judge verdicts yet, so humans
+  can label before the judge runs.
+- **What labellers see** is what the judges see: the case brief, the outline with constraints,
+  the data and attachments, and the anonymised Markdown (`normalised_markdown`). No generator
+  names, case IDs, versions or judge output. Item IDs are random, items are shuffled (pairs
+  first, then documents), and each pair's A/B sides are drawn at random. The questions and
+  anchors are quoted from the judge rubrics. The page shows the Markdown rendered or raw; links
+  are shown as text, never clickable.
+
+### Importing labels
+
+`label import` finds the run from the file's pack ID. It rejects the file, naming every problem,
+for: a pack not exported from this run (wrong pack), unknown or repeated item IDs, a kind
+mismatch, verdicts other than `A`/`B`/`tie`, scores outside the integers 1–5, missing or
+half-filled items (unless `--allow-missing`), and a labeller ID that already imported into this
+pack (unless `--replace`). Labels are stored per labeller in `runs/<id>/calibration/labels.jsonl`,
+mapped to the configured pair's sides (`x`/`y`/`tie`) so they compare directly with the judge.
+
+### Statistics
+
+Every interval is a 95% cluster-bootstrap CI over cases (`calibration.bootstrap_resamples`).
+
+| | Judge vs human | Human vs human |
+|---|---|---|
+| Pairwise, per question | **agreement with the human majority on non-tie items** (gated for `calibration.gated_questions`, default the overall verdict, which the win-rate gates use); 3-way raw agreement and Cohen's κ (A / B / tie); judge ties on non-tie items; agreement with each labeller | 3-way raw agreement, Cohen's κ, agreement where both chose a side, for every pair of labellers |
+| Absolute, per criterion | **quadratic-weighted κ**, pooled over labellers (one point per document and labeller); exact and within-1 agreement; mean difference judge − human; κ per labeller | weighted κ, exact, within-1 |
+
+- The judge's pairwise verdict is its both-orders verdict (a win only when both orders agree).
+  A non-tie item is one where the human majority chose a side; a judge tie there counts as a
+  disagreement. The human majority is the verdict more than half of the labellers gave, so two
+  labellers who disagree make the item a human tie.
+- Status: **PASS** when the label counts are met and every gated question reaches 0.75;
+  **FAIL** when a gated question is below it; **NOT ENOUGH LABELS** below the counts. A
+  criterion with κ < 0.6 does not fail calibration: it is reported as *not trusted* (not gated),
+  as §6.3 says, and gates should not rely on it. Questions that are not gated are reported the
+  same way.
+- `--recalibration` (judge model or rubric changed) lowers the counts to
+  `calibration.recalibration_min_labels` (10) of each kind. A calibration whose judge or
+  absolute-rubric version no longer matches the run's is marked **stale** in the report.
+
+### Single-labeller mode
+
+The second labeller is not named yet, so the owner may label alone. Everything judge-vs-human is
+still computed (the "human majority" is then the one labeller) and the thresholds are applied,
+but the result is marked **provisional (single labeller)** and the human-vs-human tables say
+"not computable". There is no estimate of how far two people agree, so a judge that misses 75%
+may be no worse than a second human would be. Import the second labeller's file into the same
+pack later and rerun `calibrate`; `--labellers owner` reproduces the single-labeller figures.
+Results from FAKE or `--cli` runs are also marked provisional and never count toward EVAL-13.

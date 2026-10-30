@@ -1,6 +1,7 @@
 """CLI: ``uv run --project evals python -m evals <command>`` from the repository root.
 
-Commands: project, run, grade, judge, report, compare, all. Every command defaults to
+Commands: project, run, grade, judge, report, compare, all; judge calibration (WP-018):
+label export, label import, calibrate. Every command defaults to
 FAKE mode (FakeLLM, no key, no network); ``--live`` uses the owner's ANTHROPIC_API_KEY
 and refuses to start when the projected cost exceeds run.max_usd (EVAL-18, EVAL-20).
 ``--cli`` runs every call through headless Claude Code on the owner's subscription: no
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from evals import runner
+from evals.calibration.pack import CalibrationError
 from evals.core.config import CONFIG_PATH, load_config
 from evals.core.storage import RUNS_DIR, SCOREBOARD_DIR, RunStore, latest_run_id
 from evals.generators import DEFAULT_GENERATORS
@@ -68,6 +70,32 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("run_a")
     p.add_argument("run_b")
     p.add_argument("--fail-on-regression", action="store_true", help="exit 1 when a regression is found")
+    _common(p)
+
+    p = sub.add_parser("label", help="judge calibration: export a blinded labelling pack, import labels")
+    lsub = p.add_subparsers(dest="label_cmd", required=True)
+    e = lsub.add_parser("export", help="sample pairs and documents from a run into a blinded labelling pack")
+    e.add_argument("--run-id", help="default: the most recent run")
+    e.add_argument("--seed", help="sampling seed (default: calibration.seed)")
+    e.add_argument("--pairs", type=int, help="pairs to sample (default: calibration.pairs)")
+    e.add_argument("--documents", type=int, help="documents to sample (default: calibration.documents)")
+    e.add_argument("--out", type=Path, help="pack folder (default: runs/<id>/calibration/packs/<pack_id>/)")
+    _common(e)
+    i = lsub.add_parser("import", help="validate and store one labeller's completed labels (JSON or CSV)")
+    i.add_argument("file", type=Path, help="labels JSON from pack.html, or the pack's labels.csv filled in")
+    i.add_argument("--labeller", help="labeller ID (required for CSV; must match the JSON's if given)")
+    i.add_argument("--run-id", help="the run that exported the pack (default: found from the pack ID)")
+    i.add_argument("--replace", action="store_true", help="replace this labeller's earlier labels for the pack")
+    i.add_argument("--allow-missing", action="store_true", help="accept a file that leaves items unlabelled")
+    _common(i)
+
+    p = sub.add_parser("calibrate", help="judge-vs-human and human-vs-human agreement against the EVAL-13 thresholds")
+    p.add_argument("--run-id", help="default: the most recent run")
+    p.add_argument("--recalibration", action="store_true",
+                   help="judge model or rubric changed: require calibration.recalibration_min_labels of each kind")
+    p.add_argument("--labellers", nargs="+", metavar="ID", help="use only these labellers' labels")
+    p.add_argument("--resamples", type=int, help="bootstrap resamples (default: calibration.bootstrap_resamples)")
+    p.add_argument("--fail-on-miss", action="store_true", help="exit 1 unless the status is pass")
     _common(p)
     return ap
 
@@ -190,6 +218,40 @@ def cmd_compare(args: argparse.Namespace, config: dict[str, Any]) -> int:
     return 1 if args.fail_on_regression and result["regressions"] else 0
 
 
+def cmd_label(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    from evals.calibration.labels import import_labels
+    from evals.calibration.pack import export_pack
+
+    if args.label_cmd == "export":
+        store = _store(args, args.run_id)
+        pack, out = export_pack(store, config, out_dir=args.out, seed=args.seed, n_pairs=args.pairs, n_docs=args.documents)
+        kinds = [it["kind"] for it in pack["items"]]
+        print(f"pack {pack['pack_id']} from run {store.run_id}: {kinds.count('pairwise')} pair(s), "
+              f"{kinds.count('absolute')} document(s)")
+        print(f"  {out / 'pack.html'}   open in a browser, label, download the labels JSON")
+        print(f"  {out / 'pack.md'} + labels.csv   the same pack without a browser")
+        print("The key (which generator wrote what) stays in the run directory; give labellers only the pack folder.")
+        return 0
+    store, rows = import_labels(args.file, labeller=args.labeller, runs_dir=args.runs_dir, run_id=args.run_id,
+                                replace=args.replace, allow_missing=args.allow_missing)
+    kinds = [r["kind"] for r in rows]
+    print(f"imported {len(rows)} label(s) from {rows[0]['labeller']} into run {store.run_id}, pack {rows[0]['pack_id']}: "
+          f"{kinds.count('pairwise')} pair(s), {kinds.count('absolute')} document(s)")
+    return 0
+
+
+def cmd_calibrate(args: argparse.Namespace, config: dict[str, Any]) -> int:
+    from evals.calibration.calibrate import calibrate, render_section, write_calibration
+
+    store = _store(args, args.run_id)
+    summary = calibrate(store, config, recalibration=args.recalibration, labellers=args.labellers,
+                        resamples=args.resamples)
+    print("\n".join(render_section(summary)))
+    j, m = write_calibration(store, summary)
+    print(f"calibration: {m}\n             {j}")
+    return 1 if args.fail_on_miss and summary["status"] != "pass" else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     config = load_config(args.config)
@@ -206,6 +268,10 @@ def main(argv: list[str] | None = None) -> int:
             cmd_report(args, config)
         elif args.cmd == "compare":
             return cmd_compare(args, config)
+        elif args.cmd == "label":
+            return cmd_label(args, config)
+        elif args.cmd == "calibrate":
+            return cmd_calibrate(args, config)
         elif args.cmd == "all":
             store = cmd_run(args, config)
             cmd_grade(args, config, store)
@@ -213,6 +279,9 @@ def main(argv: list[str] | None = None) -> int:
             cmd_report(args, config, store)
     except (runner.BudgetExceeded, runner.MissingKey, runner.MissingCli) as e:
         print(f"refusing to start: {e}", file=sys.stderr)
+        return 2
+    except CalibrationError as e:
+        print(f"error: {e}", file=sys.stderr)
         return 2
     return 0
 
