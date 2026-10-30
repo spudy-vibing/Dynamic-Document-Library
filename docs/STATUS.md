@@ -70,7 +70,9 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [x] WP-017 Coherence prototypes P1–P4 and the ablation report: merged 2026-10-30 (`ac7ad21`). p1-frame, p2-brief, p3-flow, p4-editor on top of B1; FR-PRV-7 request layout; ablation section in the report; 8 judge pairs (each prototype vs B1 and B0). Tests: 266 passed, 2 skipped.
   - Follow-ups: FakeLLM's default responder writes no valid brief or editor JSON (fake runs show warnings), and its cache simulation tracks only the last breakpoint; `BlockOut` has no edited flag. An MVP-size run with all 7 generators projects $24 live (above the $15 per-run cap) or $33 API-equivalent via `--cli`.
   - Deviations from FR-COH (for the owner at G0): the editor reuses the sections' shared prefix; audience and style are in the frame; P3 trims old sections to their first paragraph.
-- [~] WP-018 Calibration tooling (labelling flow, agreement statistics). Agent dispatched 2026-10-30.
+- [x] WP-018 Calibration tooling: merged 2026-10-30. `label export` (blinded single-file HTML pack + CSV fallback), `label import`, `calibrate` (judge-vs-human agreement, Cohen's κ / weighted κ, bootstrap CIs; PASS needs ≥40 pairs, ≥20 docs, ≥0.75 agreement on the overall verdict). Single-labeller mode is marked provisional. Eval tests: 427 passed, 2 skipped.
+  - Interpretations to confirm at G0: only the overall pairwise verdict is gated (Q1–Q3 reported); labels live in the gitignored run directory.
+- [ ] Follow-up: extend the perturbation samples (`evals/tests/data/samples/`) to the new families (F4–F7).
 - [x] WP-019 Eval CI: merged 2026-10-30. `evals-offline.yml` (every PR and push: tests, import check, case check, fake smoke run twice + compare) and `evals-live.yml` (manual dispatch only, `eval-live` environment with owner approval, projects and caps before running, artifacts only). Eval tests: 404 passed, 2 skipped.
   - **Owner one-time setup:** GitHub → Settings → Environments → create `eval-live`, add yourself as required reviewer, add `ANTHROPIC_API_KEY` as an environment secret (see `evals/README.md`, CI section).
 - [ ] WP-020 G0 eval run (owner): baselines and prototypes on the dev set, 3 reps; calibration; decision record 0006 (default presets, tuned prompts)
@@ -209,3 +211,4 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | 2026-10-30 | Owner allowed period differences in quarterly cases; cases regenerated, CLI run rescored, everything committed. |
 | 2026-10-30 | Root README committed (`af92cf0`); branch renamed to `main`; GitHub repo creation blocked by permission check (owner to do). Dispatched agents in worktrees: WP-000, WP-015, WP-016, WP-017. |
 | 2026-10-30 | Owner chose `doccode-py`; repo is on GitHub (Dynamic-Document-Library, public); pushed. |
+| 2026-10-30 | Merged WP-016, WP-001, WP-019, WP-018; spike WP-002 built; owner's second batch of decisions applied (MIT, WeasyPrint, Sonnet default, $175 run cap); GitHub CI green. BRD amendment agent and two simulated spike sessions dispatched. |
