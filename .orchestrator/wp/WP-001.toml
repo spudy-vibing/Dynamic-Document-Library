@@ -1,0 +1,33 @@
+# WP manifest (DEVELOPMENT_PLAN §0.7), read by scripts/check_ownership.py and scripts/traceability.py.
+id = "WP-001"
+wave = 0
+title = "Repo scaffold"
+requirements = ["NFR-1", "NFR-2", "NFR-4", "NFR-5", "NFR-6", "NFR-16"]
+owns = [
+    # §3: pyproject.toml, Makefile, .github/workflows/** except evals-*.yml (WP-019)
+    "pyproject.toml",
+    "uv.lock",
+    "Makefile",
+    ".github/workflows/ci.yml",
+    # §3: tests/conftest.py and WP-001's own suites; scripts/**
+    "tests/conftest.py",
+    "conftest.py",  # routes a root-level `pytest` to the library or the eval suite
+    "tests/test_smoke.py",
+    "tests/test_scaffold.py",
+    "tests/test_check_ownership.py",
+    "tests/test_traceability.py",
+    "scripts/**",
+    # §3: stubs, plus hygiene files named in the WP-001 row
+    "README.md",
+    "CHANGELOG.md",
+    "mkdocs.yml",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    # Package placeholder so `import doccode` works and the wheel builds. WP-003 owns
+    # src/doccode/__init__.py from the contract freeze on (§3).
+    "src/doccode/__init__.py",
+    "src/doccode/py.typed",
+    # Bootstrap only: the manifest directory is Orchestrator-owned after WP-001.
+    ".orchestrator/wp/WP-001.toml",
+]
+depends_on = ["WP-000"]

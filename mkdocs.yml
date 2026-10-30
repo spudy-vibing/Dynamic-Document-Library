@@ -1,0 +1,10 @@
+# Stub (WP-001). WP-503 builds the MkDocs Material site (NFR-19); the docs build joins CI in Wave 4.
+site_name: DocCode
+site_description: Write documents like code.
+docs_dir: docs
+nav:
+  - Status: STATUS.md
+  - Requirements (BRD): DocCode BRD Write Documents Like Code.md
+  - Development plan: DEVELOPMENT_PLAN.md
+  - Design (HLD): HLD.md
+  - Evaluation: EVALS_PROPOSAL.md

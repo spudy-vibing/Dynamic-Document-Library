@@ -1,0 +1,4 @@
+# Settings for scripts/traceability.py (DEVELOPMENT_PLAN §6). Orchestrator-owned after WP-001.
+# Add a wave number here when its gate passes: every MUST scheduled in a listed wave must then
+# have at least one test whose name cites it, or CI fails.
+completed_waves = []

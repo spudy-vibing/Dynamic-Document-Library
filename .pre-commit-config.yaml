@@ -1,0 +1,29 @@
+# Local hooks that run the same tools as `make check` from the project environment.
+# Install with: uv run pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        exclude: ^evals/
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        exclude: ^evals/
+      - id: mypy
+        name: mypy --strict
+        entry: uv run mypy --strict src scripts
+        language: system
+        pass_filenames: false
+        files: ^(src|scripts)/
+      - id: ownership
+        name: check_ownership
+        entry: uv run python scripts/check_ownership.py
+        language: system
+        pass_filenames: false
+        always_run: true
