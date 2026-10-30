@@ -168,7 +168,8 @@ sequenceDiagram
 **Consequences.**
 - One brace style for values.
 - Text containing a token is in "token mode", where every brace is literal. Text with no token is in "placeholder mode", where `{name}` is filled from context.
-- Misuse is caught at validation: `!r`, format specs, `.upper()` and slicing all raise errors.
+- Misuse is caught at validation: `!r`, format specs on prompts, `.upper()` and slicing all raise errors. A format spec on a `Value` (`f"{growth:.0%}"`) is kept in the token and applied at substitution, so the value keeps its number.
+- Two silent slips are caught too: `{name}` text in a token-mode string that names a context value (write `{ctx.name}`), and a prompt or value passed through `context=`, which would add no edge.
 - Inserted text is never re-parsed, so model output can't inject placeholders.
 
 ### 5.2 The request is split into a shared part and a per-prompt part
@@ -204,8 +205,8 @@ sequenceDiagram
 **Decision.** `doc.expand(build, after=outline)` registers a point in the document. When `outline` finishes, `build(outline_text)` runs inside the frozen document and adds sections and prompts there.
 **Guardrails.**
 - New nodes are validated before they run, with at most `max_nodes` nodes and nesting depth 3.
-- IDs are prefixed with the expansion ID, so they stay stable across runs.
-- Model text goes in through `context=`, which is inserted literally, never by pasting it into an instruction string.
+- IDs are prefixed with the expansion ID, so they stay stable across runs. The expansion ID defaults to the containing section's ID (`themes` → `themes/pricing-pressure`).
+- Model text goes in through `context=`, which is inserted literally, never by pasting it into an instruction string. A placeholder whose text appears in the build's inputs is rejected (FR-DYN-7).
 
 ### 5.5 Coherence layers
 
@@ -218,6 +219,8 @@ sequenceDiagram
 | Repetition detection (on by default) | After generation and after editing | Shared 8-grams between sections become warnings, which are passed to the editor | Free |
 
 Presets: `basic` (frame and repetition), `report` (adds the brief and editor), `narrative` (adds sequential flow and the editor), `off`. Any explicit option overrides the preset. All four layers ship. The Phase 0 eval ablation picks the default preset for each document family and tunes the built-in prompts (BRD §5.7).
+
+**Provisional (owner, 2026-10-30).** The G0 prototypes test three variations on the BRD text: the editor reuses the sections' shared prefix instead of a different one (FR-PRV-7); the frame also carries audience and style; under sequential flow, old sections are trimmed to their first paragraph past `max_flow_chars`. Decision 0006 confirms or rejects each one for the library (BRD §4.17).
 
 ### 5.6 Reproducibility: cache and lock
 
@@ -254,7 +257,7 @@ classDiagram
     run: RunRecord?
     ok: bool
   }
-  class SectionContent { id; title; level; blocks: Block[]; subsections }
+  class SectionContent { id; title; level; items: (Block | SectionContent)[] }
   class Block
   class MarkdownBlock { text; source_prompt_id; edited }
   class TableBlock { columns; rows; caption }
@@ -264,6 +267,7 @@ classDiagram
   class PromptRecord { id; kind; status; model; effort; tokens; cache tokens; cost; latency; warnings; raw_output }
   DocumentContent --> SectionContent
   SectionContent --> Block
+  SectionContent --> SectionContent
   Block <|-- MarkdownBlock
   Block <|-- TableBlock
   Block <|-- MetricBlock
@@ -272,7 +276,7 @@ classDiagram
   RunRecord --> PromptRecord
 ```
 
-Node kinds: `prompt`, `value`, `expansion`, `brief`, `editor`. Statuses: `ok`, `cached`, `locked`, `failed`, `skipped`. Sections, prompts, values and expansions share one ID namespace per document.
+Node kinds: `prompt`, `value`, `expansion`, `brief`, `editor`. Statuses: `ok`, `cached`, `locked`, `failed`, `skipped`. `SectionContent.items` keeps blocks and subsections in insertion order; `blocks` and `subsections` are derived views. Section IDs and node IDs (prompts, values, expansions) are separate namespaces per document, so a section and its prompt may share an ID.
 
 ## 7. Providers
 
@@ -282,17 +286,18 @@ Provider (protocol)
   async complete(CompletionRequest) -> Completion
 
 CompletionRequest: model, system, prefix[(name, text)], messages, effort, max_tokens,
-                   response_format, metadata{node_id, kind, section_id}
+                   response_format, metadata{node_id, kind, section_id, feeds_expansion?}
 Completion:        text, input/output tokens, cache_read/cache_write tokens, stop_reason, raw
 ```
 
 - **AnthropicProvider**
   - Uses the official async SDK. It is imported lazily, and one client is created per event loop.
-  - `effort` is sent as `output_config.effort`. It never sends `temperature`, `top_p` or `top_k`.
+  - `effort` is sent as `output_config.effort`, and a structured-output schema as `output_config.format`. It never sends `temperature`, `top_p`, `top_k`, an assistant prefill or a forced tool choice.
+  - A stop reason of `max_tokens` or `model_context_window_exceeded` marks the output as truncated.
   - It places the `cache_control` breakpoints.
   - A missing API key is an error only when a real call is needed.
-- **MockProvider** is deterministic and makes no network calls. It takes a response map (a dict or a `<script>.mock.json` file) or a callable. Its defaults depend on the node kind: a valid brief for `brief`, an empty edit list for `editor`. Misspelled prompt IDs in the map are errors.
-- **Pricing** lives in one table, `providers/pricing.py`, including cache-read and cache-write prices. An unknown model reports cost as `None`, not 0.
+- **MockProvider** is deterministic and makes no network calls. It takes a response map (a dict or a `<script>.mock.json` file) or a callable. Its defaults depend on the node kind: a valid brief for `brief`, an empty edit list for `editor`, a three-item list for a prompt that feeds an expansion, and otherwise `[mock:<id>]` with the unresolved instruction, references shown as `{id}`. Misspelled prompt IDs in the map are errors. `plan.mock_template()` gives a ready-to-edit map.
+- **Pricing** lives in one table, `providers/pricing.py`, including cache-read and cache-write prices. An unknown model reports cost as `None`, not 0. A model whose rates rise above a prompt-size threshold (Haiku 5.5 above 100k tokens) has a second set of rates, applied to the whole call.
 
 ## 8. Execution environments
 
@@ -347,7 +352,7 @@ flowchart LR
 
 ## 11. Packaging and deployment
 
-- One PyPI package, `doccode`: hatchling, `src/` layout, MIT licence, Python 3.10 and later.
+- One PyPI package, `doccode-py` (imported as `doccode`, decision 0002): hatchling, `src/` layout, MIT licence, Python 3.10 and later.
 - Core dependencies: `anthropic`, `jinja2`, `markdown-it-py`, `nh3`, `typer`, `rich` (plus `tomli` on 3.10).
 - Extras: `pdf` (WeasyPrint), `schema` (Pydantic), `dev`.
 - Built-in templates and sample content ship as package data.
@@ -369,8 +374,9 @@ flowchart LR
 ## 13. Open items
 
 1. ~~**Refusal handling.**~~ Resolved 2026-10-30: FR-PRV-8 (see §4.3).
-2. **Package name.** `doccode` is not yet confirmed on PyPI (Phase 0).
-3. **PDF engine.** WeasyPrint or Typst (Phase 0 decision 0003).
-4. **Default model and presets.** Decided in Phase 0 (decisions 0005, 0006) and confirmed at G3 (0007).
+2. ~~**Package name.**~~ Resolved 2026-10-30 (decision 0002): `doccode-py` on PyPI, `import doccode`.
+3. ~~**PDF engine.**~~ Resolved 2026-10-30 (decision 0003): WeasyPrint.
+4. **Default model and presets.** Default model resolved 2026-10-30 (decision 0005): `claude-sonnet-5-5`. Presets are decided at G0 (decision 0006); both are confirmed at G3 (0007).
 5. ~~**Using the lock by default.**~~ Resolved 2026-10-30: only with `--lock`/`--locked` in 0.1.0.
 6. ~~**Orchestration engine.**~~ Resolved 2026-10-30: DocCode's own scheduler, not LangGraph (`docs/decisions/0008-orchestration-engine.md`).
+7. **Spike ambiguities.** Six small API questions from the spike (decision 0004 F11) are open until after the user sessions and must be settled before WP-003 (BRD §8).

@@ -1,6 +1,6 @@
 # 0004: API spike — findings and recommended BRD changes
 
-**Status:** DRAFT. The spike builder wrote the builder findings (WP-002) on 2026-10-30. The owner fills in the three user sessions and the live call. **The owner must approve, reject or modify each recommended BRD change below before WP-003 (contract freeze) starts** (DEVELOPMENT_PLAN §0.2 rule 1, §0.4; BRD §10.5 lists §4.1–4.4, §4.13, §4.14 and §4.17 as API-sensitive).
+**Status:** R1–R12 accepted and R13 deferred by the owner, 2026-10-30 (see Decision). The spike builder wrote the builder findings (WP-002) on 2026-10-30. The owner fills in the user sessions and the live call. **The owner must approve, reject or modify each recommended BRD change below before WP-003 (contract freeze) starts** (DEVELOPMENT_PLAN §0.2 rule 1, §0.4; BRD §10.5 lists §4.1–4.4, §4.13, §4.14 and §4.17 as API-sensitive).
 **Requirements:** WP-002; BRD §1.5 (time to first document), §2 (UC-1, UC-2), §4.1–4.6, §4.13–4.14, §4.17 (frame), FR-PRV-4, §7
 **Spike:** branch `spike/api` (never merged), code under `spike/`. How to run it and the full list of shortcuts are in `spike/README.md`.
 
@@ -207,12 +207,30 @@ Run per `spike/README.md` → "Owner's live call". The `doccode.live` adapter is
 - Tokens and cost reported by the API:
 - Anything that changes a recommendation above:
 
-## Decision (owner fills in)
+## Decision (owner, 2026-10-30)
 
-- Recommendations accepted:
-- Rejected (with reason):
-- Modified:
-- BRD amended in commit: ____ on ____. WP-003 may start: yes / no.
+- **Recommendations accepted:** R1–R12, all as recommended above. The BRD carries each one, marked "(amended 2026-10-30, decision 0004 R<n>)":
+  - R1: FR-DAG-1, FR-DOC-5, FR-PRM-5, FR-DYN-1, FR-DYN-5; FR-LCK-2 (`only=` takes both kinds of ID) for consistency
+  - R2: FR-DYN-1, FR-DYN-5; `id="by-theme"` dropped from §7
+  - R3: FR-REF-1 (`|fmt=<spec>` token), FR-REF-9, FR-VAL-1
+  - R4: FR-CNT-1, FR-CNT-2, FR-CNT-7, FR-DOC-7; FR-RND-3 (Markdown renders `items` in order) for consistency
+  - R5: FR-CTX-2
+  - R6: FR-REF-8 (raises; no warn-only variant)
+  - R7: new FR-DYN-7, pointed to from FR-DYN-2
+  - R8: §7 and FR-DYN-2 (`ctx` style in the expansion; `outline` is a helper by `visible=False` only, created inside the Executive Summary section because the summary's f-string needs it first)
+  - R9: FR-PRV-4; FR-PRV-1 (`feeds_expansion` in `request.metadata`)
+  - R10: FR-REF-1 (SHOULD)
+  - R11: FR-DAG-3, FR-DAG-4 (SHOULD)
+  - R12: FR-REF-8, FR-ERR-2
+- **Deferred:** R13 (the F11 ambiguities 1–6) until after the user sessions. It is an open question in BRD §8, marked "decide before WP-003". F11 item 7 (escaping `/` in HTML anchors) needs no contract change and is left to the HTML renderer.
+- **Rejected:** none.
+- **Clarifications added while amending** (details the recommendations left open; for owner review):
+  - A default expansion ID is assigned when the graph is built or extended, after explicit IDs are known, and takes a numeric suffix (`-2`) when already taken, for example by a second expansion in the same section (FR-DYN-1).
+  - An `only=` entry that names both a section and a prompt selects both (FR-LCK-2).
+  - `plan.mock_template()` returns JSON text mapping every prompt ID known before the run to its default mock output, leaving out `_brief`, `_editor` and expansion-created prompts (FR-DAG-4).
+  - If `format(result, spec)` raises for a `fmt` token, the substitution fails like a failed node (FR-VAL-1); a `fmt` token on a prompt key is a `TokenMisuseError` (FR-REF-1).
+- **User sessions:** session 1 is run by the owner (P1 developer persona). Sessions 2 (P2 data analyst) and 3 (P3 DevOps/CI) are simulated by fresh agents with only the session kit, the method WP-505 uses (owner decision, 2026-10-30). Only session 1 gives a human timing. The session results may still change the recommendations above: a change the sessions contradict goes back to the owner.
+- BRD amended on branch `docs/brd-amendments-2026-10-30`, 2026-10-30, in the commit that fills in this section. WP-003 may start: **not yet**. R13 must be settled after the user sessions, and G0 (WP-020, decision 0006) must pass first.
 
 ## Consequences
 
