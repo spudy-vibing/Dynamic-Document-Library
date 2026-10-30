@@ -1,0 +1,22 @@
+# WP manifest (DEVELOPMENT_PLAN §0.7), read by scripts/check_ownership.py and scripts/traceability.py.
+id = "WP-019"
+wave = 0
+title = "Eval CI"
+requirements = ["EVAL-8", "EVAL-14", "EVAL-18"]
+owns = [
+    # §3: evals/checks/**, .github/workflows/evals-*.yml
+    "evals/checks/**",
+    ".github/workflows/evals-*.yml",
+    # WP-019's own tests
+    "evals/tests/test_ci_workflows.py",
+    # Append-only: a "CI" section (README is WP-010's, §3)
+    "evals/README.md",
+    # Append-only: pyyaml in the eval `dev` group, for the workflow tests (WP-010's files, §3)
+    "evals/pyproject.toml",
+    "evals/uv.lock",
+    # Append-only: the `evals` target (WP-001's file, §3); `check` is unchanged
+    "Makefile",
+    # Bootstrap only: the manifest directory is Orchestrator-owned.
+    ".orchestrator/wp/WP-019.toml",
+]
+depends_on = ["WP-001", "WP-012", "WP-014"]
