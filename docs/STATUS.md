@@ -54,7 +54,9 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 **Rest of Wave 0 evals**
 - [~] WP-015 Absolute rubric (six criteria) and claim checker
 - [~] WP-016 Full dev set (24 cases, F1–F7) and held-out generators with owner-held seeds
-- [~] WP-017 Coherence prototypes P1–P4 and the ablation report
+- [x] WP-017 Coherence prototypes P1–P4 and the ablation report: merged 2026-10-30 (`ac7ad21`). p1-frame, p2-brief, p3-flow, p4-editor on top of B1; FR-PRV-7 request layout; ablation section in the report; 8 judge pairs (each prototype vs B1 and B0). Tests: 266 passed, 2 skipped.
+  - Follow-ups: FakeLLM's default responder writes no valid brief or editor JSON (fake runs show warnings), and its cache simulation tracks only the last breakpoint; `BlockOut` has no edited flag. An MVP-size run with all 7 generators projects $24 live (above the $15 per-run cap) or $33 API-equivalent via `--cli`.
+  - Deviations from FR-COH (for the owner at G0): the editor reuses the sections' shared prefix; audience and style are in the frame; P3 trims old sections to their first paragraph.
 - [ ] WP-018 Calibration tooling (labelling flow, agreement statistics)
 - [ ] WP-019 Eval CI (offline job on every PR, owner-approved live workflow)
 - [ ] WP-020 G0 eval run (owner): baselines and prototypes on the dev set, 3 reps; calibration; decision record 0006 (default presets, tuned prompts)
