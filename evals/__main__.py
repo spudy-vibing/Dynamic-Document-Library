@@ -19,6 +19,7 @@ from evals import runner
 from evals.core.config import CONFIG_PATH, load_config
 from evals.core.storage import RUNS_DIR, SCOREBOARD_DIR, RunStore, latest_run_id
 from evals.generators import DEFAULT_GENERATORS
+from evals.judge import absolute, claims
 
 
 def _common(p: argparse.ArgumentParser) -> None:
@@ -51,10 +52,13 @@ def parser() -> argparse.ArgumentParser:
         p.add_argument("--run-id", help="resume this run, or name a new one")
         _common(p)
 
-    for name, help_ in (("grade", "apply every grader"), ("judge", "pairwise judge"), ("report", "write report.md and the scoreboard summary")):
+    for name, help_ in (("grade", "apply every grader"), ("judge", "pairwise judge, absolute rubric and claim checker"),
+                        ("report", "write report.md and the scoreboard summary")):
         p = sub.add_parser(name, help=help_)
         p.add_argument("--run-id", help="default: the most recent run")
         if name == "judge":
+            p.add_argument("--only", nargs="+", choices=runner.JUDGE_KINDS, metavar="KIND",
+                           help=f"run only these judges ({', '.join(runner.JUDGE_KINDS)}); default: all enabled ones")
             backend = p.add_mutually_exclusive_group()
             backend.add_argument("--live", action="store_true", help="judge with the real API")
             backend.add_argument("--cli", action="store_true", help="UNOFFICIAL: judge through headless Claude Code")
@@ -137,16 +141,33 @@ def cmd_judge(args: argparse.Namespace, config: dict[str, Any], store: RunStore 
         runner.require_cli()
     manifest = store.read_manifest()
     cases = runner.cases_from_manifest(manifest)
+    kinds = judge_kinds(args, config)
     if args.live:
         runner.require_key()
         if args.cmd == "judge":  # `all --live` already checked the whole run's projection
             gens = runner.select_generators([g["name"] for g in manifest["generators"]], ())
-            proj = runner.judge_only(runner.project(cases, gens, int(manifest["reps"]), config))
+            proj = runner.judge_only(runner.project(cases, gens, int(manifest["reps"]), config), kinds)
             print(proj.format(), "\n")
             runner.check_budget(proj)
-    counts = asyncio.run(runner.judge_run(store, cases, config, live=args.live, cli=args.cli))
-    print(f"judged run {store.run_id}: {counts['orders']} order(s) judged this time, {counts['skipped']} pair slot(s) skipped")
+    backend = {"live": args.live, "cli": args.cli}
+    if "pairwise" in kinds:
+        counts = asyncio.run(runner.judge_run(store, cases, config, **backend))
+        print(f"judged run {store.run_id}: {counts['orders']} order(s) judged this time, {counts['skipped']} pair slot(s) skipped")
+    for kind, fn in (("absolute", runner.absolute_run), ("claims", runner.claims_run)):
+        if kind in kinds:
+            c = asyncio.run(fn(store, cases, config, **backend))
+            print(f"{kind}: {c['calls']} call(s) made this time, {c['errors']} unresolved error(s), "
+                  f"{c['skipped']} document(s) skipped")
     return store
+
+
+def judge_kinds(args: argparse.Namespace, config: dict[str, Any]) -> list[str]:
+    """--only, else every judge enabled in config.toml (absolute.enabled, claims.enabled)."""
+    only = getattr(args, "only", None)
+    if only:
+        return list(only)
+    enabled = {"pairwise": True, "absolute": absolute.enabled(config), "claims": claims.enabled(config)}
+    return [k for k in runner.JUDGE_KINDS if enabled[k]]
 
 
 def cmd_report(args: argparse.Namespace, config: dict[str, Any], store: RunStore | None = None) -> RunStore:

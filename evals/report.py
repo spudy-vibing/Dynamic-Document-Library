@@ -9,7 +9,7 @@ from typing import Any
 
 from evals.core.storage import SCOREBOARD_DIR, RunStore, write_atomic
 from evals.core.types import METRICS, MetricDef
-from evals.judge import pairwise
+from evals.judge import absolute, claims, pairwise, perdoc
 
 FAKE_BANNER = (
     "> **FAKE MODE — not a real result.** Documents and judge verdicts come from the deterministic "
@@ -101,23 +101,59 @@ def cost_split(store: RunStore, generators: list[str]) -> dict[str, Any]:
             "cache_read_tokens": sum(c["cache_read_tokens"] for c in mine),
             "cache_write_tokens": sum(c["cache_write_tokens"] for c in mine),
         }
-    judge = [c for c in calls if c.get("phase") == "judge"]
-    j = {"usd": sum(c["cost_usd"] or 0.0 for c in judge), "calls": len(judge),
-         "unpriced_calls": sum(1 for c in judge if c["cost_usd"] is None),
-         **{k: sum(c.get(k) or 0 for c in judge)
-            for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")}}
+    def phase(name: str) -> dict[str, Any]:
+        mine = [c for c in calls if c.get("phase") == name]
+        return {"usd": sum(c["cost_usd"] or 0.0 for c in mine), "calls": len(mine),
+                "unpriced_calls": sum(1 for c in mine if c["cost_usd"] is None),
+                **{k: sum(c.get(k) or 0 for c in mine)
+                   for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")}}
+
+    j, a, cl = phase("judge"), phase(absolute.STREAM), phase(claims.STREAM)
     total_gen = sum(v["usd"] for v in gen.values())
-    return {"generation": gen, "generation_usd": total_gen, "judge": j, "total_usd": total_gen + j["usd"]}
+    judging = j["usd"] + a["usd"] + cl["usd"]
+    return {"generation": gen, "generation_usd": total_gen, "judge": j, "absolute": a, "claims": cl,
+            "judging_usd": judging, "total_usd": total_gen + judging}
 
 
 # ---------------------------------------------------------------- building
 
 
+def perdoc_versions(manifest: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
+    """The absolute-rubric and claim-checker versions a run was judged with (else the current ones)."""
+    return {
+        "absolute": manifest.get("absolute_version") or absolute.absolute_version(config),
+        "claims": manifest.get("claims_version") or claims.claims_version(config),
+    }
+
+
+def judged_scores(store: RunStore, config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Score-shaped rows from absolute.jsonl and claims.jsonl, for the run's own versions only (EVAL-12)."""
+    v = perdoc_versions(store.read_manifest(), config)
+    return (absolute.score_rows(store.read(absolute.STREAM), v["absolute"], floor=absolute.floor_of(config))
+            + claims.score_rows(store.read(claims.STREAM), v["claims"]))
+
+
+def claims_stats(rows: list[dict[str, Any]], version: str, generators: list[str]) -> dict[str, dict[str, Any]]:
+    """Per generator: documents checked, claims per verdict, and model/rule agreement on rule-checked claims."""
+    latest = perdoc.latest_ok(rows, version).values()
+    out = {}
+    for g in generators:
+        mine = [r for r in latest if r["generator"] == g]
+        verdicts = {v: sum(1 for r in mine for c in r.get("claims", []) if c.get("verdict") == v) for v in claims.VERDICTS}
+        checked = sum(r.get("rule_checked", 0) for r in mine)
+        agree = sum(r.get("model_agrees", 0) for r in mine)
+        out[g] = {"docs": len(mine), "claims": sum(verdicts.values()), "verdicts": verdicts,
+                  "rule_checked": checked, "model_agreement": agree / checked if checked else None}
+    return out
+
+
 def build_summary(store: RunStore, config: dict[str, Any]) -> dict[str, Any]:
     m = store.read_manifest()
     generators = [g["name"] for g in m.get("generators", [])]
-    scores = [s for s in store.read("scores") if s["generator"] in generators]
+    scores = [s for s in store.read("scores") + judged_scores(store, config) if s["generator"] in generators]
     table = metric_table(scores, generators)
+    versions = perdoc_versions(m, config)
+    abs_rows, claim_rows = store.read(absolute.STREAM), store.read(claims.STREAM)
     jv = m.get("judge_version")
     judge_rows = [r for r in store.read("judge") if r.get("judge_version") == jv]
     names = set(generators)
@@ -130,9 +166,17 @@ def build_summary(store: RunStore, config: dict[str, Any]) -> dict[str, Any]:
         "manifest": {k: m.get(k) for k in (
             "created_at", "updated_at", "git_sha", "models", "effort", "max_tokens", "case_set",
             "case_set_hash", "case_ids", "reps", "generators", "graders", "judge_version", "judge_mode",
-            "judge_batches")},
-        "metrics": {k: v for k, v in table.items() if not k.startswith("trap.")},
+            "judge_batches", "absolute_version", "absolute_mode", "absolute_batches", "claims_version",
+            "claims_mode", "claims_batches")},
+        "metrics": {k: v for k, v in table.items() if not k.startswith(("trap.", "abs."))},
         "traps": {k: v for k, v in table.items() if k.startswith("trap.")},
+        "absolute": {k: v for k, v in table.items() if k.startswith("abs.")},
+        "absolute_info": {"version": versions["absolute"], "floor": absolute.floor_of(config),
+                          "rows": len(perdoc.latest_ok(abs_rows, versions["absolute"])),
+                          "errors": perdoc.unresolved_errors(abs_rows, versions["absolute"])},
+        "claims": claims_stats(claim_rows, versions["claims"], generators),
+        "claims_info": {"version": versions["claims"], "rows": len(perdoc.latest_ok(claim_rows, versions["claims"])),
+                        "errors": perdoc.unresolved_errors(claim_rows, versions["claims"])},
         "win_rates": wins,
         "judge_rows": len(judge_rows),
         "judge_errors": sum(1 for r in judge_rows if r.get("status") != "ok"),
@@ -167,6 +211,9 @@ def render_report(summary: dict[str, Any]) -> str:
         "- Generators: " + ", ".join(f"`{g['name']}` {g['version']}" for g in m.get("generators") or []),
         f"- Judge version: `{m.get('judge_version')}` ({m.get('judge_mode') or 'not run'}"
         + (", Message Batches" if m.get("judge_batches") else "") + ")",
+        f"- Absolute rubric: `{m.get('absolute_version')}` ({m.get('absolute_mode') or 'not run'}); "
+        f"claim checker: `{m.get('claims_version')}` with `{(m.get('models') or {}).get('claims')}` "
+        f"(effort {(m.get('effort') or {}).get('claims')}; {m.get('claims_mode') or 'not run'})",
         "- Graders: " + (", ".join(f"{g['name']} {g['version']}" for g in m.get("graders") or []) or "not run"),
         "",
     ]
@@ -213,6 +260,9 @@ def render_report(summary: dict[str, Any]) -> str:
     if summary["judge_errors"]:
         out += [f"Judge errors (refusals, infra, unparseable replies; excluded): {summary['judge_errors']}", ""]
 
+    out += render_absolute(summary, gens)
+    out += render_claims(summary, gens)
+
     out += ["## Traps", ""]
     traps = summary["traps"]
     if not traps:
@@ -245,16 +295,74 @@ def render_report(summary: dict[str, Any]) -> str:
         out.append(f"| generate: {g} | {c['calls']} | {c['input_tokens']:,} | {c['output_tokens']:,} | "
                    f"{c['cache_read_tokens']:,} | {c['cache_write_tokens']:,} | ${c['usd']:.4f} |")
     j = cost["judge"]
-    note = " (Batches: 50% applied)" if m.get("judge_batches") else ""
-    out.append(f"| judge{note} | {j['calls']} | {j.get('input_tokens', 0):,} | {j.get('output_tokens', 0):,} | "
-               f"{j.get('cache_read_tokens', 0):,} | {j.get('cache_write_tokens', 0):,} | ${j['usd']:.4f} |")
+    judging = [("judge", j, m.get("judge_batches"))]
+    for key, label in (("absolute", "judge: absolute rubric"), ("claims", "claims check")):
+        if cost.get(key, {}).get("calls"):
+            judging.append((label, cost[key], m.get(f"{key}_batches")))
+    for label, c, batched in judging:
+        note = " (Batches: 50% applied)" if batched else ""
+        out.append(f"| {label}{note} | {c['calls']} | {c.get('input_tokens', 0):,} | {c.get('output_tokens', 0):,} | "
+                   f"{c.get('cache_read_tokens', 0):,} | {c.get('cache_write_tokens', 0):,} | ${c['usd']:.4f} |")
     out.append(f"| **total** | | | | | | **${cost['total_usd']:.4f}** |")
-    out.append(f"\nGeneration ${cost['generation_usd']:.4f} · judging ${j['usd']:.4f}.")
-    unpriced = sum(c["unpriced_calls"] for c in cost["generation"].values()) + j["unpriced_calls"]
+    out.append(f"\nGeneration ${cost['generation_usd']:.4f} · judging ${cost.get('judging_usd', j['usd']):.4f}.")
+    unpriced = sum(c["unpriced_calls"] for c in cost["generation"].values()) + sum(c["unpriced_calls"] for _, c, _ in judging)
     if unpriced:
         out.append(f"\n{unpriced} call(s) used an unpriced model and are not in these totals.")
     out.append("")
     return "\n".join(out)
+
+
+def render_absolute(summary: dict[str, Any], gens: list[str]) -> list[str]:
+    """Absolute rubric section: floors (BRD §1.5) and per-criterion means (diagnosis only, EVAL-10)."""
+    info = summary.get("absolute_info") or {}
+    out = ["## Absolute rubric", ""]
+    if not info.get("rows"):
+        return out + ["Not judged yet (`python -m evals judge --only absolute`).", ""]
+    floor = info.get("floor", absolute.DEFAULT_FLOOR)
+    metrics, means = summary["metrics"], summary.get("absolute", {})
+    out += [f"Six anchored criteria scored 1–5 in three grouped calls per document (`{info.get('version')}`). "
+            f"Floors and diagnosis only, never ranking. Gate (BRD §1.5): at most 5% of documents score ≤ {floor} "
+            "on any criterion, and none scores 1 on C1 accuracy.", "",
+            "| Criterion | " + " | ".join(gens) + " |", "|---|" + "---|" * len(gens)]
+    for key in ("abs_floor", "abs_c1_is_1"):
+        out.append(f"| **{METRICS[key].label}** | " + " | ".join(cell(metrics.get(key, {}).get(g, {}), "pct") for g in gens) + " |")
+    for c in absolute.CRITERIA:
+        row = means.get(f"abs.{c}", {})
+        out.append(f"| {absolute.CRITERION_LABELS[c]} (mean) | " + " | ".join(cell(row.get(g, {}), "num") for g in gens) + " |")
+    out.append("")
+    if info.get("errors"):
+        out += [f"Absolute-rubric calls still failing (refusals, infra, unparseable replies; excluded): {info['errors']}", ""]
+    return out
+
+
+def render_claims(summary: dict[str, Any], gens: list[str]) -> list[str]:
+    """Claim checker section: verdict counts, silent misattribution, model/rule agreement."""
+    info = summary.get("claims_info") or {}
+    stats = summary.get("claims") or {}
+    out = ["## Claim checker", ""]
+    if not info.get("rows"):
+        return out + ["Not checked yet (`python -m evals judge --only claims`).", ""]
+    metrics = summary["metrics"]
+    out += [f"Claims extracted by the claims model and re-checked against truth.json (`{info.get('version')}`). "
+            "Misattributed = misattributed + wrong period + wrong direction; silent = not flagged by the generator "
+            "(every baseline claim is silent). Gate (BRD §1.5): silent misattributed claims in at most 1% of documents.", "",
+            "| | " + " | ".join(gens) + " |", "|---|" + "---|" * len(gens)]
+    for key in ("misattrib", "misattrib_silent", "docs_misattrib_silent"):
+        out.append(f"| **{METRICS[key].label}** | " + " | ".join(cell(metrics.get(key, {}).get(g, {}), "pct") for g in gens) + " |")
+    out.append("| Documents checked | " + " | ".join(str(stats.get(g, {}).get("docs", 0)) for g in gens) + " |")
+    for v in claims.VERDICTS:
+        out.append(f"| Claims: {v.replace('_', ' ')} | " + " | ".join(str(stats.get(g, {}).get("verdicts", {}).get(v, 0)) for g in gens) + " |")
+
+    def agreement(g: str) -> str:
+        s = stats.get(g, {})
+        a = s.get("model_agreement")
+        return "—" if a is None else f"{a * 100:.0f}% of {s.get('rule_checked', 0)}"
+
+    out.append("| Model verdict = rule verdict | " + " | ".join(agreement(g) for g in gens) + " |")
+    out.append("")
+    if info.get("errors"):
+        out += [f"Claim checks still failing (refusals, infra, unparseable replies; excluded): {info['errors']}", ""]
+    return out
 
 
 def write_report(store: RunStore, config: dict[str, Any], *, scoreboard_dir: Path = SCOREBOARD_DIR) -> tuple[Path, Path]:

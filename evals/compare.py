@@ -14,9 +14,16 @@ from typing import Any
 from evals.core.storage import RunStore
 from evals.core.types import METRICS
 from evals.judge import pairwise
-from evals.report import fmt
+from evals.report import fmt, judged_scores, perdoc_versions
 
 Clusters = dict[str, tuple[float, float]]  # case_id -> (num, den)
+
+ABSOLUTE_METRICS = ("abs_floor", "abs_c1_is_1", "abs.")
+CLAIMS_METRICS = ("misattrib", "misattrib_silent", "docs_misattrib_silent")
+
+
+def _is_kind(metric: str, names: tuple[str, ...]) -> bool:
+    return metric in names or any(n.endswith(".") and metric.startswith(n) for n in names)
 
 
 def per_case(rows: list[dict[str, Any]]) -> Clusters:
@@ -101,6 +108,20 @@ def compare_runs(a: RunStore, b: RunStore, config: dict[str, Any], **bootstrap: 
             warnings.append(f"{g} version differs: {va[g]} vs {vb[g]}")
 
     sa, sb = a.read("scores"), b.read("scores")
+    # Absolute-rubric and claim-checker rows join only when both runs used the same version
+    # (EVAL-12). Floors and misattribution can be flagged; "abs.<criterion>" means have no
+    # direction, so they are reported but never flagged (EVAL-10: never for ranking).
+    va_, vb_ = perdoc_versions(ma, config), perdoc_versions(mb, config)
+    ja, jb = judged_scores(a, config), judged_scores(b, config)
+    for kind, metrics in (("absolute", ABSOLUTE_METRICS), ("claims", CLAIMS_METRICS)):
+        mine_a = [r for r in ja if _is_kind(r["metric"], metrics)]
+        mine_b = [r for r in jb if _is_kind(r["metric"], metrics)]
+        if not (mine_a and mine_b):
+            continue
+        if va_[kind] != vb_[kind]:
+            warnings.append(f"{kind}_version differs ({va_[kind]} vs {vb_[kind]}): its metrics are not compared (EVAL-12)")
+            continue
+        sa, sb = sa + mine_a, sb + mine_b
     rows = []
     for g in gens:
         metrics = sorted({r["metric"] for r in sa if r["generator"] == g} & {r["metric"] for r in sb if r["generator"] == g})

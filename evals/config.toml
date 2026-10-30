@@ -4,14 +4,17 @@
 [models]
 generator = "claude-sonnet-5-5"   # assumed DEFAULT_MODEL until decision 0005
 judge = "claude-opus-5-5"         # never weaker than the generator (EVAL-12)
+claims = "claude-sonnet-5-5"      # claim checker (EVALS_PROPOSAL §6.2): a different role, cheap
 
 [effort]                          # always sent explicitly as output_config.effort
 generator = "medium"
 judge = "medium"
+claims = "medium"
 
 [max_tokens]                      # includes adaptive-thinking tokens
 generator = 16000
 judge = 16000
+claims = 16000
 
 # USD per million tokens. Verify against the official pricing page before a live run.
 # cache_write is the 5-minute cache-write rate (1.25x input).
@@ -35,6 +38,18 @@ pairs = [
     ["b2-chain", "b1-parallel"],
 ]
 
+[absolute]
+# Absolute rubric (EVAL-10): six criteria in three grouped calls on the judge model and effort.
+# Its version is judge.version + a hash of the absolute_*.md rubric files: bump judge.version
+# when the judge model or effort changes; any rubric edit re-versions it by itself (EVAL-12).
+enabled = true
+floor = 2                         # a score at or below this is a floor miss (BRD §1.5: <= 5% of docs)
+
+[claims]
+# Claim checker (EVAL-11): models.claims at effort.claims, one call per document.
+version = "c1"                    # bump when the claims model, effort or checking logic changes
+enabled = true
+
 [run]
 case_set = "dev"                  # evals/cases/<case_set>/
 reps = 3
@@ -48,6 +63,8 @@ refusal_rate_limit = 0.02         # above this, a generator's results are marked
 # run.max_usd and prints the worst case (max_tokens on every call) alongside.
 output_tokens_per_call = 2500     # generator calls, thinking included
 judge_output_tokens = 2000        # per judge call (one order of one pair)
+absolute_output_tokens = 1500     # per absolute-rubric call (one criterion group of one document)
+claims_output_tokens = 2500       # per claim-check call (one document)
 chars_per_token = 4
 
 [grading]

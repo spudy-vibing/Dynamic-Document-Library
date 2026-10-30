@@ -34,7 +34,7 @@ from evals.core.types import (
     RefusalError,
 )
 from evals.generators import GENERATORS, NO_LLM
-from evals.judge import pairwise
+from evals.judge import absolute, claims, pairwise, perdoc
 
 Log = Callable[[str], None]
 
@@ -212,11 +212,15 @@ def project(
                                usd(in_tok, calls * j_out), usd(in_tok, calls * j_max),
                                note="(batches, 50%)" if factor < 1 else "")
             )
+        proj.lines += _perdoc_projection(cases, generators, reps, config, use_batches=bool(use_batches))
 
     proj.assumptions = [
         f"generator {gen_model}, effort {config['effort']['generator']}; judge {config['models']['judge']}, effort {config['effort']['judge']}",
         f"expected: {out_per_call} output tokens per generator call (thinking included), "
-        f"{proj_cfg['judge_output_tokens']} per judge call; a one-shot call also writes the other sections' text",
+        f"{proj_cfg['judge_output_tokens']} per pairwise judge call, {proj_cfg.get('absolute_output_tokens', 1500)} per "
+        f"absolute-rubric call (3 per document), {proj_cfg.get('claims_output_tokens', 2500)} per claim check "
+        f"(1 per document, {config['models'].get('claims')}, effort {config['effort'].get('claims')}); "
+        "a one-shot call also writes the other sections' text",
         f"worst case: max_tokens on every call ({gen_max} generator, {config['max_tokens']['judge']} judge)",
         f"input tokens = prompt characters / {cpt:g}; no prompt-cache discount assumed (conservative)",
         "refusal retries and transient-error retries are not included",
@@ -224,8 +228,68 @@ def project(
     return proj
 
 
-def judge_only(proj: Projection) -> Projection:
-    return Projection([ln for ln in proj.lines if ln.label.startswith("judge")], proj.max_usd, proj.assumptions)
+def _fake_doc(case: EvalCase) -> GenerationResult:
+    """A stand-in document of the planned length, for sizing per-document judge prompts."""
+    from evals.core.types import BlockOut, SectionOut
+
+    sections = [SectionOut(s.id, s.title, 1, [BlockOut("model", "word " * int(visible_chars(s) / 5))]) for s in case.sections]
+    return GenerationResult("projection", "0", case.id, 1, case.title, sections, [], 0)
+
+
+def _perdoc_projection(
+    cases: list[EvalCase], generators: list[Generator], reps: int, config: dict[str, Any], *, use_batches: bool
+) -> list[ProjectionLine]:
+    """Absolute rubric (3 judge calls per document) and claim check (1 claims-model call per document)."""
+    proj_cfg = config["projection"]
+    cpt = float(proj_cfg["chars_per_token"])
+    factor = perdoc.BATCH_COST_FACTOR if use_batches else 1.0
+    note = "(batches, 50%)" if factor < 1 else ""
+    docs_per_case = len(generators) * reps
+    lines = []
+
+    def chars(system: str, messages: list[dict[str, Any]]) -> int:
+        return len(system) + sum(len(b["text"]) for b in messages[0]["content"])
+
+    def line(label: str, model: str, calls: int, in_tok: int, out: int, mx: int) -> ProjectionLine:
+        p = _price(config, model)
+        usd = lambda i, o: factor * (i * p["input"] + o * p["output"]) / 1e6  # noqa: E731
+        return ProjectionLine(label, 0, calls, in_tok, calls * out, calls * mx,
+                              usd(in_tok, calls * out), usd(in_tok, calls * mx), note=note)
+
+    if absolute.enabled(config):
+        calls = in_tok = 0
+        for case in cases:
+            doc = pairwise.normalised_markdown(_fake_doc(case))
+            for g in absolute.GROUPS:
+                calls += docs_per_case
+                in_tok += int(chars(*absolute.build_request(case, doc, g)) / cpt) * docs_per_case
+        lines.append(line("judge absolute rubric", config["models"]["judge"], calls, in_tok,
+                          int(proj_cfg.get("absolute_output_tokens", 1500)), int(config["max_tokens"]["judge"])))
+    if claims.enabled(config):
+        calls = in_tok = 0
+        for case in cases:
+            calls += docs_per_case
+            in_tok += int(chars(*claims.build_request(case, _fake_doc(case))) / cpt) * docs_per_case
+        lines.append(line("judge claims check", config["models"]["claims"], calls, in_tok,
+                          int(proj_cfg.get("claims_output_tokens", 2500)), int(config["max_tokens"]["claims"])))
+    return lines
+
+
+JUDGE_KINDS = ("pairwise", "absolute", "claims")
+
+
+def judge_only(proj: Projection, kinds: Iterable[str] = JUDGE_KINDS) -> Projection:
+    """The judging lines of a projection, optionally only some judge kinds."""
+    kinds = set(kinds)
+
+    def wanted(label: str) -> bool:
+        if label.startswith("judge absolute"):
+            return "absolute" in kinds
+        if label.startswith("judge claims"):
+            return "claims" in kinds
+        return label.startswith("judge") and "pairwise" in kinds
+
+    return Projection([ln for ln in proj.lines if wanted(ln.label)], proj.max_usd, proj.assumptions)
 
 
 def check_budget(proj: Projection) -> None:
@@ -247,6 +311,8 @@ def build_manifest(
         "git_sha": git_sha(),
         "generators": [{"name": g.name, "version": g.version} for g in generators],
         "judge_version": pairwise.judge_version(config),
+        "absolute_version": absolute.absolute_version(config),
+        "claims_version": claims.claims_version(config),
         "models": dict(config["models"]),
         "effort": dict(config["effort"]),
         "max_tokens": dict(config["max_tokens"]),
@@ -466,3 +532,77 @@ async def _judge_jobs(
             )
         else:
             await pairwise.judge_with_llm(jobs, pairwise.make_fake_judge(config), store, jv)
+
+
+# ---------------------------------------------------------------- per-document judging (WP-015)
+
+
+async def _perdoc_run(
+    kind: str,
+    store: RunStore,
+    cases: list[EvalCase],
+    config: dict[str, Any],
+    *,
+    live: bool,
+    cli: bool,
+    client: Any,
+    log: Log,
+    poll_s: float,
+) -> dict[str, int]:
+    """Absolute rubric or claim check over every error-free document; appends <kind>.jsonl (resumable)."""
+    mod: Any = absolute if kind == "absolute" else claims
+    version = absolute.absolute_version(config) if kind == "absolute" else claims.claims_version(config)
+    side = "judge" if kind == "absolute" else "claims"
+    model, effort, mt = config["models"][side], config["effort"][side], config["max_tokens"][side]
+    by_id = {c.id: c for c in cases}
+    done = perdoc.done_ids(store.read(mod.STREAM), version)
+    if kind == "absolute":
+        jobs, skipped = absolute.plan_jobs(store.iter_results(), by_id, done)
+    else:
+        jobs, skipped = claims.plan_jobs(store.iter_results(), by_id, done, config)
+    log(f"{kind} {version}: {len(jobs)} call(s) to make, {skipped} document(s) skipped (errored or unknown case)")
+    conc = int(config["run"]["max_concurrency"])
+    batches = bool(live and config["judge"].get("use_batches"))
+    owned = live and jobs and client is None
+    if owned:
+        client = make_client()
+    try:
+        if not jobs:
+            pass
+        elif cli:  # one headless call per job; batches do not apply
+            limiter = asyncio.Semaphore(conc)
+            await perdoc.run_with_llm(jobs, lambda: ClaudeCodeLLM(model, effort, mt, config, limiter=limiter), store,
+                                      mod.STREAM, version, role=mod.ROLE, concurrency=conc)
+        elif batches:
+            await perdoc.run_with_batches(jobs, client, config, store, mod.STREAM, version, model=model, effort=effort,
+                                          max_tokens=mt, role=mod.ROLE, poll_s=poll_s, log=log)
+        elif live:
+            limiter = asyncio.Semaphore(conc)
+            await perdoc.run_with_llm(jobs, lambda: AnthropicLLM(model, effort, mt, config, client=client, limiter=limiter),
+                                      store, mod.STREAM, version, role=mod.ROLE, concurrency=conc)
+        else:
+            fake = absolute.make_fake_judge(config) if kind == "absolute" else claims.make_fake_checker(config, jobs)
+            await perdoc.run_with_llm(jobs, fake, store, mod.STREAM, version, role=mod.ROLE, concurrency=conc)
+    finally:
+        if owned:
+            await client.close()
+    store.touch_manifest(**{f"{kind}_version": version, f"{kind}_at": now_iso(),
+                            f"{kind}_mode": "live" if live else "cli" if cli else "fake", f"{kind}_batches": batches})
+    return {"calls": len(jobs), "skipped": skipped,
+            "errors": perdoc.unresolved_errors(store.read(mod.STREAM), version)}
+
+
+async def absolute_run(
+    store: RunStore, cases: list[EvalCase], config: dict[str, Any], *, live: bool = False, cli: bool = False,
+    client: Any = None, log: Log = print, poll_s: float = 30.0,
+) -> dict[str, int]:
+    """Absolute rubric (EVAL-10): three grouped judge calls per document -> absolute.jsonl."""
+    return await _perdoc_run("absolute", store, cases, config, live=live, cli=cli, client=client, log=log, poll_s=poll_s)
+
+
+async def claims_run(
+    store: RunStore, cases: list[EvalCase], config: dict[str, Any], *, live: bool = False, cli: bool = False,
+    client: Any = None, log: Log = print, poll_s: float = 30.0,
+) -> dict[str, int]:
+    """Claim checker (EVAL-11): one claims-model call per document -> claims.jsonl."""
+    return await _perdoc_run("claims", store, cases, config, live=live, cli=cli, client=client, log=log, poll_s=poll_s)
