@@ -63,6 +63,17 @@ ANTHROPIC_API_KEY=... uv run --project evals python -m evals all --live   # offi
 
 See `evals/README.md` for the commands, what each mode costs and what it does and does not prove.
 
+## Developing the library
+
+The library lives in `src/doccode/` (currently only the scaffold). The PyPI distribution
+name is provisional (`doccode-py`, see `docs/decisions/0002-package-name.md`); the import
+name and the CLI are `doccode`.
+
+```sh
+uv run pytest          # library tests, fully offline (sockets are blocked)
+make check             # lint, format, mypy --strict, tests + coverage, ownership, traceability
+```
+
 ## License
 
 Not chosen yet.

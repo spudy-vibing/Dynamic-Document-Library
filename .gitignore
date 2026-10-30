@@ -6,3 +6,19 @@ __pycache__/
 # Offline (fake-mode) eval summaries are test output, not results
 evals/scoreboard/fake-*
 .claude/worktrees/
+
+# Library tooling (WP-001)
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+build/
+dist/
+*.egg-info/
+site/
+# Generated in CI by scripts/traceability.py (DEVELOPMENT_PLAN §6); never edited by hand
+docs/traceability.md
+# DocCode cache: may hold sensitive prompt text (NFR-16). The lock directory is committed.
+.doccode_cache/
