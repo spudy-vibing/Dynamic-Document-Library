@@ -1,0 +1,180 @@
+{
+  "values": {
+    "revenue_prior": 60300000,
+    "revenue_this": 63800000,
+    "gross_margin_prior_pct": 22.4,
+    "gross_margin_pct": 23.9,
+    "opex_change_pct": 23.7,
+    "active_customers_prior": 1635,
+    "active_customers": 1764,
+    "churn_prior_pct": 4.5,
+    "churn_pct": 4.4,
+    "pipeline_coverage": null,
+    "revenue_yoy": 53500000,
+    "gross_margin_yoy_pct": 26.6,
+    "active_customers_yoy": 1458,
+    "churn_yoy_pct": 7.8
+  },
+  "labels": {
+    "revenue_prior": [
+      "Q1 2026 revenue",
+      "prior-quarter revenue",
+      "revenue"
+    ],
+    "revenue_this": [
+      "Q2 2026 revenue",
+      "revenue"
+    ],
+    "gross_margin_prior_pct": [
+      "prior-quarter gross margin",
+      "gross margin"
+    ],
+    "gross_margin_pct": [
+      "gross margin",
+      "margin"
+    ],
+    "opex_change_pct": [
+      "operating expenses",
+      "opex"
+    ],
+    "active_customers_prior": [
+      "prior-quarter customers",
+      "active customers",
+      "customers"
+    ],
+    "active_customers": [
+      "active customers",
+      "customers"
+    ],
+    "churn_prior_pct": [
+      "prior-quarter churn",
+      "churn"
+    ],
+    "churn_pct": [
+      "churn"
+    ],
+    "pipeline_coverage": [
+      "pipeline coverage"
+    ],
+    "revenue_yoy": [
+      "Q2 2025 revenue",
+      "year-ago revenue",
+      "revenue"
+    ],
+    "gross_margin_yoy_pct": [
+      "year-ago gross margin",
+      "gross margin"
+    ],
+    "active_customers_yoy": [
+      "year-ago customers",
+      "active customers",
+      "customers"
+    ],
+    "churn_yoy_pct": [
+      "year-ago churn",
+      "churn"
+    ]
+  },
+  "derived": {
+    "revenue_growth_pct": {
+      "value": 5.8,
+      "formula": "(revenue_this / revenue_prior - 1) * 100"
+    },
+    "revenue_change": {
+      "value": 3500000,
+      "formula": "revenue_this - revenue_prior"
+    },
+    "gross_margin_change_pp": {
+      "value": 1.5,
+      "formula": "gross_margin_pct - gross_margin_prior_pct"
+    },
+    "active_customers_change": {
+      "value": 129,
+      "formula": "active_customers - active_customers_prior"
+    },
+    "churn_change_pp": {
+      "value": -0.1,
+      "formula": "churn_pct - churn_prior_pct"
+    },
+    "revenue_change_yoy": {
+      "value": 10300000,
+      "formula": "revenue_this - revenue_yoy"
+    },
+    "revenue_growth_yoy_pct": {
+      "value": 19.3,
+      "formula": "(revenue_this / revenue_yoy - 1) * 100"
+    },
+    "gross_margin_change_yoy_pp": {
+      "value": -2.7,
+      "formula": "gross_margin_pct - gross_margin_yoy_pct"
+    },
+    "active_customers_change_yoy": {
+      "value": 306,
+      "formula": "active_customers - active_customers_yoy"
+    },
+    "churn_change_yoy_pp": {
+      "value": -3.4,
+      "formula": "churn_pct - churn_yoy_pct"
+    }
+  },
+  "facts": {
+    "company": "Quorvane Analytics",
+    "period": "Q2 2026",
+    "prior_period": "Q1 2026",
+    "revenue_direction": "up",
+    "year_ago_period": "Q2 2025"
+  },
+  "periods": {
+    "prior": [
+      "Q1 2026",
+      "Q1",
+      "prior quarter",
+      "previous quarter",
+      "last quarter",
+      "preceding quarter",
+      "the quarter before",
+      "quarter-on-quarter",
+      "quarter on quarter",
+      "quarter-over-quarter",
+      "quarter over quarter",
+      "QoQ",
+      "sequential",
+      "sequentially"
+    ],
+    "year_ago": [
+      "Q2 2025",
+      "a year ago",
+      "a year earlier",
+      "year ago",
+      "year earlier",
+      "year-ago",
+      "last year",
+      "prior year",
+      "previous year",
+      "same quarter last year",
+      "year-on-year",
+      "year on year",
+      "year-over-year",
+      "year over year",
+      "YoY"
+    ]
+  },
+  "period_of": {
+    "revenue_prior": "prior",
+    "gross_margin_prior_pct": "prior",
+    "active_customers_prior": "prior",
+    "churn_prior_pct": "prior",
+    "revenue_change": "prior",
+    "gross_margin_change_pp": "prior",
+    "active_customers_change": "prior",
+    "churn_change_pp": "prior",
+    "revenue_yoy": "year_ago",
+    "gross_margin_yoy_pct": "year_ago",
+    "active_customers_yoy": "year_ago",
+    "churn_yoy_pct": "year_ago",
+    "revenue_change_yoy": "year_ago",
+    "gross_margin_change_yoy_pp": "year_ago",
+    "active_customers_change_yoy": "year_ago",
+    "churn_change_yoy_pp": "year_ago"
+  }
+}

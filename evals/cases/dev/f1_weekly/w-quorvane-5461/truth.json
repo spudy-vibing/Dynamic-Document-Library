@@ -1,0 +1,96 @@
+{
+  "values": {
+    "week_number": 13,
+    "platform_tickets_closed": 24,
+    "platform_open_bugs": 33,
+    "platform_deploys": 21,
+    "platform_p95_latency_ms": null,
+    "mobile_tickets_closed": 62,
+    "mobile_open_bugs": 29,
+    "mobile_deploys": 16,
+    "mobile_crash_free_pct": 99.54,
+    "data_tickets_closed": 27,
+    "data_open_bugs": 31,
+    "data_deploys": 12,
+    "data_pipeline_freshness_min": 59
+  },
+  "labels": {
+    "week_number": [
+      "week"
+    ],
+    "platform_tickets_closed": [
+      "Platform tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "platform_open_bugs": [
+      "Platform open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "platform_deploys": [
+      "Platform deploys",
+      "deploys",
+      "deployments"
+    ],
+    "platform_p95_latency_ms": [
+      "p95 latency",
+      "latency"
+    ],
+    "mobile_tickets_closed": [
+      "Mobile tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "mobile_open_bugs": [
+      "Mobile open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "mobile_deploys": [
+      "Mobile deploys",
+      "deploys",
+      "deployments"
+    ],
+    "mobile_crash_free_pct": [
+      "crash-free",
+      "crash free"
+    ],
+    "data_tickets_closed": [
+      "Data tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "data_open_bugs": [
+      "Data open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "data_deploys": [
+      "Data deploys",
+      "deploys",
+      "deployments"
+    ],
+    "data_pipeline_freshness_min": [
+      "pipeline freshness",
+      "freshness"
+    ]
+  },
+  "derived": {
+    "tickets_closed_total": {
+      "value": 113,
+      "formula": "platform_tickets_closed + mobile_tickets_closed + data_tickets_closed"
+    },
+    "deploys_total": {
+      "value": 49,
+      "formula": "platform_deploys + mobile_deploys + data_deploys"
+    }
+  },
+  "facts": {
+    "company": "Quorvane Analytics",
+    "week": "2026-W13",
+    "platform_lead": "Lena Castellanos",
+    "mobile_lead": "Mateo Lindqvist",
+    "data_lead": "Dario Nwosu"
+  }
+}

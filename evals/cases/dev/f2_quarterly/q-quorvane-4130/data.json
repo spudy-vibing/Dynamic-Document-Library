@@ -1,0 +1,61 @@
+{
+  "company": "Quorvane Analytics",
+  "period": "Q2 2026",
+  "prior_period": "Q1 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 60300000,
+    "revenue_this": 63800000,
+    "gross_margin_prior_pct": 22.4,
+    "gross_margin_pct": 23.9,
+    "opex_change_pct": 23.7,
+    "active_customers_prior": 1635,
+    "active_customers": 1764,
+    "churn_prior_pct": 4.5,
+    "churn_pct": 4.4,
+    "pipeline_coverage": null,
+    "revenue_yoy": 53500000,
+    "gross_margin_yoy_pct": 26.6,
+    "active_customers_yoy": 1458,
+    "churn_yoy_pct": 7.8
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q2 2025": 53500000,
+      "Q1 2026": 60300000,
+      "Q2 2026": 63800000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q2 2025": 26.6,
+      "Q1 2026": 22.4,
+      "Q2 2026": 23.9
+    },
+    {
+      "kpi": "Active customers",
+      "Q2 2025": 1458,
+      "Q1 2026": 1635,
+      "Q2 2026": 1764
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q2 2025": 7.8,
+      "Q1 2026": 4.5,
+      "Q2 2026": 4.4
+    },
+    {
+      "kpi": "Pipeline coverage",
+      "Q2 2025": null,
+      "Q1 2026": null,
+      "Q2 2026": null
+    }
+  ],
+  "notes": [
+    "The partner channel signed its first reseller in the Nordics.",
+    "Support response times improved after the new triage rota.",
+    "The ERP migration is on schedule for completion next quarter.",
+    "Pipeline coverage was not reported because the CRM migration is incomplete."
+  ],
+  "year_ago_period": "Q2 2025"
+}

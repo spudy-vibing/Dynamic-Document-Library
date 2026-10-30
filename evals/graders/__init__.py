@@ -11,6 +11,8 @@ from evals.graders.adherence import AdherenceGrader
 from evals.graders.chatter import ChatterGrader
 from evals.graders.cost import CostGrader
 from evals.graders.data_blocks import DataBlocksGrader
+from evals.graders.flags import FlagsGrader
+from evals.graders.links import LinksGrader
 from evals.graders.numbers import NumbersGrader
 from evals.graders.repetition import RepetitionGrader
 from evals.graders.structure import StructureGrader
@@ -22,6 +24,8 @@ ALL_GRADERS: list[Grader] = [
     ChatterGrader(),
     AdherenceGrader(),
     DataBlocksGrader(),
+    LinksGrader(),
+    FlagsGrader(),
     CostGrader(),
 ]
 
@@ -31,6 +35,8 @@ __all__ = [
     "ChatterGrader",
     "CostGrader",
     "DataBlocksGrader",
+    "FlagsGrader",
+    "LinksGrader",
     "NumbersGrader",
     "RepetitionGrader",
     "StructureGrader",

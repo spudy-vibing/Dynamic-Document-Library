@@ -1,0 +1,33 @@
+{
+  "values": {
+    "timeout_s": 16,
+    "workers": 12,
+    "retries": 11,
+    "python_floor": 3.12
+  },
+  "labels": {
+    "timeout_s": [
+      "timeout"
+    ],
+    "workers": [
+      "workers"
+    ],
+    "retries": [
+      "retries"
+    ],
+    "python_floor": [
+      "Python"
+    ]
+  },
+  "derived": {},
+  "facts": {
+    "install_command": "pip install ostrelix-pack",
+    "cli_command": "ostrelixpack",
+    "cli_flags": "-h/--help, --config, --workers, --timeout, --retries, --dry-run, --verbose",
+    "license": "BSD-3-Clause",
+    "python_floor": ">=3.12",
+    "version": "0.8.5",
+    "env_vars": "OSTRELIXPACK_TOKEN, OSTRELIXPACK_CACHE_DIR",
+    "removed_flags": "--threads"
+  }
+}

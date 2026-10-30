@@ -1,0 +1,43 @@
+{
+  "package": "tesselate-sync",
+  "version": "0.3.5",
+  "description": "Mirror a directory tree to object storage, skipping unchanged files.",
+  "command": "tesselatesync",
+  "requires_python": ">=3.9",
+  "license": "Apache-2.0",
+  "flags": [
+    {
+      "flag": "--config PATH",
+      "default": "./tesselatesync.toml"
+    },
+    {
+      "flag": "--workers N",
+      "default": 29
+    },
+    {
+      "flag": "--timeout SECONDS",
+      "default": 55
+    },
+    {
+      "flag": "--retries N",
+      "default": 14
+    },
+    {
+      "flag": "--dry-run",
+      "default": false
+    },
+    {
+      "flag": "--verbose",
+      "default": false
+    }
+  ],
+  "defaults": {
+    "timeout_s": 55,
+    "workers": 29,
+    "retries": 14
+  },
+  "extras": {
+    "azure": "azure-storage-blob>=12.19",
+    "yaml": "pyyaml>=6.0"
+  }
+}

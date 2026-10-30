@@ -1,0 +1,76 @@
+{
+  "values": {
+    "cold_start_before_ms": 668,
+    "cold_start_after_ms": 551,
+    "sync_time_before_ms": 2261,
+    "sync_time_after_ms": 1252,
+    "peak_memory_before_mb": 198,
+    "peak_memory_after_mb": null,
+    "merged_prs": 46,
+    "contributors": 15,
+    "python_floor_old": 3.9,
+    "python_floor_new": 3.11
+  },
+  "labels": {
+    "cold_start_before_ms": [
+      "cold start"
+    ],
+    "cold_start_after_ms": [
+      "cold start"
+    ],
+    "sync_time_before_ms": [
+      "sync"
+    ],
+    "sync_time_after_ms": [
+      "sync"
+    ],
+    "peak_memory_before_mb": [
+      "peak memory",
+      "memory"
+    ],
+    "peak_memory_after_mb": [
+      "peak memory",
+      "memory"
+    ],
+    "merged_prs": [
+      "pull requests",
+      "PRs",
+      "merged"
+    ],
+    "contributors": [
+      "contributors"
+    ],
+    "python_floor_old": [
+      "Python"
+    ],
+    "python_floor_new": [
+      "Python"
+    ]
+  },
+  "derived": {
+    "cold_start_improvement_ms": {
+      "value": 117,
+      "formula": "cold_start_before_ms - cold_start_after_ms"
+    },
+    "sync_time_improvement_ms": {
+      "value": 1009,
+      "formula": "sync_time_before_ms - sync_time_after_ms"
+    },
+    "cold_start_improvement_pct": {
+      "value": 17.5,
+      "formula": "(1 - cold_start_after_ms / cold_start_before_ms) * 100"
+    },
+    "sync_time_improvement_pct": {
+      "value": 44.6,
+      "formula": "(1 - sync_time_after_ms / sync_time_before_ms) * 100"
+    }
+  },
+  "facts": {
+    "package": "brindle-audit",
+    "version": "3.7.0",
+    "previous_version": "3.6.5",
+    "python_floor": ">=3.11",
+    "dropped_python": "3.9",
+    "features": "Resumable uploads, Glob filters, Config profiles, Plugin hooks"
+  }
+}

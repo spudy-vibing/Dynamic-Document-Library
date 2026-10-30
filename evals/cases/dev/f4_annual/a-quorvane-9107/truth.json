@@ -1,0 +1,144 @@
+{
+  "values": {
+    "revenue_q1": 34900000,
+    "gross_margin_q1_pct": 25.5,
+    "active_customers_q1": 867,
+    "revenue_q2": 37700000,
+    "gross_margin_q2_pct": 26.9,
+    "active_customers_q2": 961,
+    "revenue_q3": 40700000,
+    "gross_margin_q3_pct": 26.7,
+    "active_customers_q3": 1148,
+    "revenue_q4": 42600000,
+    "gross_margin_q4_pct": 27.8,
+    "active_customers_q4": 1192,
+    "revenue_fy_prior": 139900000
+  },
+  "labels": {
+    "revenue_q1": [
+      "Q1 2025 revenue",
+      "Q1 revenue",
+      "revenue"
+    ],
+    "gross_margin_q1_pct": [
+      "Q1 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q1": [
+      "Q1 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q2": [
+      "Q2 2025 revenue",
+      "Q2 revenue",
+      "revenue"
+    ],
+    "gross_margin_q2_pct": [
+      "Q2 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q2": [
+      "Q2 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q3": [
+      "Q3 2025 revenue",
+      "Q3 revenue",
+      "revenue"
+    ],
+    "gross_margin_q3_pct": [
+      "Q3 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q3": [
+      "Q3 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q4": [
+      "Q4 2025 revenue",
+      "Q4 revenue",
+      "revenue"
+    ],
+    "gross_margin_q4_pct": [
+      "Q4 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q4": [
+      "Q4 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_fy_prior": [
+      "FY2024 revenue",
+      "prior-year revenue",
+      "revenue"
+    ]
+  },
+  "derived": {
+    "revenue_fy": {
+      "value": 155900000,
+      "formula": "revenue_q1 + revenue_q2 + revenue_q3 + revenue_q4"
+    },
+    "revenue_fy_change": {
+      "value": 16000000,
+      "formula": "revenue_fy - revenue_fy_prior"
+    },
+    "revenue_change_q2": {
+      "value": 2800000,
+      "formula": "revenue_q2 - revenue_q1"
+    },
+    "active_customers_change_q2": {
+      "value": 94,
+      "formula": "active_customers_q2 - active_customers_q1"
+    },
+    "gross_margin_change_q2_pp": {
+      "value": 1.4,
+      "formula": "gross_margin_q2_pct - gross_margin_q1_pct"
+    },
+    "revenue_change_q3": {
+      "value": 3000000,
+      "formula": "revenue_q3 - revenue_q2"
+    },
+    "active_customers_change_q3": {
+      "value": 187,
+      "formula": "active_customers_q3 - active_customers_q2"
+    },
+    "gross_margin_change_q3_pp": {
+      "value": -0.2,
+      "formula": "gross_margin_q3_pct - gross_margin_q2_pct"
+    },
+    "revenue_change_q4": {
+      "value": 1900000,
+      "formula": "revenue_q4 - revenue_q3"
+    },
+    "active_customers_change_q4": {
+      "value": 44,
+      "formula": "active_customers_q4 - active_customers_q3"
+    },
+    "gross_margin_change_q4_pp": {
+      "value": 1.1,
+      "formula": "gross_margin_q4_pct - gross_margin_q3_pct"
+    },
+    "active_customers_change_fy": {
+      "value": 325,
+      "formula": "active_customers_q4 - active_customers_q1"
+    },
+    "revenue_fy_growth_pct": {
+      "value": 11.4,
+      "formula": "(revenue_fy / revenue_fy_prior - 1) * 100"
+    }
+  },
+  "facts": {
+    "company": "Quorvane Analytics",
+    "fiscal_year": "FY2025",
+    "revenue_direction_h2": "up",
+    "fy_vs_prior_year": "above"
+  }
+}

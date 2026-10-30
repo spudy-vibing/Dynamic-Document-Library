@@ -1,0 +1,94 @@
+{
+  "company": "Calderwyn Textiles",
+  "fiscal_year": "FY2025",
+  "currency": "USD",
+  "quarters": [
+    {
+      "quarter": "Q1 2025",
+      "revenue": 25100000,
+      "gross_margin_pct": 25.7,
+      "active_customers": 763,
+      "notes": [
+        "Two regional distributors renewed on multi-year terms.",
+        "The ERP migration is on schedule for completion next quarter."
+      ]
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue": 25800000,
+      "gross_margin_pct": 23.4,
+      "active_customers": 856,
+      "notes": [
+        "The partner channel signed its first reseller in the Nordics.",
+        "The ERP migration is on schedule for completion next quarter."
+      ]
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue": 28300000,
+      "gross_margin_pct": 23.2,
+      "active_customers": 899,
+      "notes": [
+        "The enterprise tier won three new logos in financial services.",
+        "The ERP migration is on schedule for completion next quarter."
+      ]
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue": 31100000,
+      "gross_margin_pct": 23.9,
+      "active_customers": 1065,
+      "notes": [
+        "The enterprise tier won three new logos in financial services.",
+        "The finance team moved to monthly close reporting."
+      ]
+    }
+  ],
+  "kpis": [
+    {
+      "quarter": "Q1 2025",
+      "revenue_usd": 25100000,
+      "gross_margin_pct": 25.7,
+      "active_customers": 763
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue_usd": 25800000,
+      "gross_margin_pct": 23.4,
+      "active_customers": 856
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue_usd": 28300000,
+      "gross_margin_pct": 23.2,
+      "active_customers": 899
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue_usd": 31100000,
+      "gross_margin_pct": 23.9,
+      "active_customers": 1065
+    }
+  ],
+  "prior_year": {
+    "fiscal_year": "FY2024",
+    "revenue": 98600000,
+    "q4_revenue": 26900000
+  },
+  "metrics": {
+    "revenue_q1": 25100000,
+    "gross_margin_q1_pct": 25.7,
+    "active_customers_q1": 763,
+    "revenue_q2": 25800000,
+    "gross_margin_q2_pct": 23.4,
+    "active_customers_q2": 856,
+    "revenue_q3": 28300000,
+    "gross_margin_q3_pct": 23.2,
+    "active_customers_q3": 899,
+    "revenue_q4": 31100000,
+    "gross_margin_q4_pct": 23.9,
+    "active_customers_q4": 1065,
+    "revenue_fy_prior": 98600000,
+    "revenue_q4_ly": 26900000
+  }
+}

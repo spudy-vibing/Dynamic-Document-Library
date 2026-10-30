@@ -1,0 +1,47 @@
+{
+  "company": "Calderwyn Textiles",
+  "period": "Q1 2026",
+  "source": "support_tickets.md (the full export, one entry per ticket)",
+  "tickets_total": 926,
+  "csat_pct": 85.4,
+  "median_first_response_min": 144,
+  "reopened_tickets": 69,
+  "themes": [
+    {
+      "theme": "Billing and invoices",
+      "tickets": 201
+    },
+    {
+      "theme": "Login and single sign-on",
+      "tickets": 166
+    },
+    {
+      "theme": "Data export",
+      "tickets": 159
+    },
+    {
+      "theme": "Slow dashboards",
+      "tickets": 148
+    },
+    {
+      "theme": "Integrations",
+      "tickets": 131
+    },
+    {
+      "theme": "Mobile app",
+      "tickets": 121
+    }
+  ],
+  "metrics": {
+    "tickets_total": 926,
+    "csat_pct": 85.4,
+    "median_first_response_min": 144,
+    "reopened_tickets": 69,
+    "tickets_billing": 201,
+    "tickets_login": 166,
+    "tickets_export": 159,
+    "tickets_performance": 148,
+    "tickets_mobile": 121,
+    "tickets_integrations": 131
+  }
+}

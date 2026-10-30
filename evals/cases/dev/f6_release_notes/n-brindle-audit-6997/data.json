@@ -1,0 +1,122 @@
+{
+  "package": "brindle-audit",
+  "description": "Scan a project's lock file and report packages with known licence conflicts.",
+  "version": "3.7.0",
+  "previous_version": "3.6.5",
+  "requires_python": ">=3.11",
+  "previous_requires_python": ">=3.9",
+  "features": [
+    {
+      "pr": 2599,
+      "title": "Resumable uploads",
+      "summary": "Large uploads resume from the last confirmed chunk after a dropped connection.",
+      "author": "Ama Brennan"
+    },
+    {
+      "pr": 1120,
+      "title": "Glob filters",
+      "summary": "Include and exclude patterns accept shell-style globs.",
+      "author": "Ines Varga"
+    },
+    {
+      "pr": 2416,
+      "title": "Config profiles",
+      "summary": "A config file can hold named profiles for different environments.",
+      "author": "Tomasz Okafor"
+    },
+    {
+      "pr": 2344,
+      "title": "Plugin hooks",
+      "summary": "Plugins can register hooks that run before and after each file.",
+      "author": "Olu Petrakis"
+    }
+  ],
+  "fixes": [
+    {
+      "pr": 1802,
+      "summary": "Fixed the help text for the config option.",
+      "author": "Tomasz Okafor"
+    },
+    {
+      "pr": 1144,
+      "summary": "Fixed time zone handling in the modified-since filter.",
+      "author": "Olu Petrakis"
+    },
+    {
+      "pr": 1517,
+      "summary": "Fixed incorrect exit codes when a remote path did not exist.",
+      "author": "Lena Castellanos"
+    },
+    {
+      "pr": 2637,
+      "summary": "Fixed duplicate log lines when verbose output was redirected.",
+      "author": "Sofia Achterberg"
+    },
+    {
+      "pr": 2439,
+      "summary": "Fixed a crash when a file was deleted during a scan.",
+      "author": "Ama Brennan"
+    }
+  ],
+  "deprecations": [
+    {
+      "pr": 1869,
+      "summary": "The `sync_tree()` Python function is deprecated in favour of `Mirror.run()`."
+    },
+    {
+      "pr": 2069,
+      "summary": "The `--legacy-paths` option is deprecated and will be removed in the next minor release."
+    }
+  ],
+  "breaking_changes": [
+    {
+      "pr": 1572,
+      "summary": "Python 3.9 is no longer supported; brindle-audit now requires Python 3.11 or later."
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmark": "Cold start (ms)",
+      "3.6.5": 668,
+      "3.7.0": 551
+    },
+    {
+      "benchmark": "Sync of a large tree (ms)",
+      "3.6.5": 2261,
+      "3.7.0": 1252
+    },
+    {
+      "benchmark": "Peak memory (MB)",
+      "3.6.5": 198,
+      "3.7.0": null
+    }
+  ],
+  "benchmark_notes": [
+    "Benchmarks ran on the project's reference runner with the same test corpus for both versions.",
+    "The peak-memory benchmark was not rerun for this release because the runner image changed."
+  ],
+  "stats": {
+    "merged_prs": 46,
+    "contributors": 15
+  },
+  "contributors_named": [
+    "Ama Brennan",
+    "Ines Varga",
+    "Lena Castellanos",
+    "Olu Petrakis",
+    "Sofia Achterberg",
+    "Tomasz Okafor"
+  ],
+  "metrics": {
+    "cold_start_before_ms": 668,
+    "cold_start_after_ms": 551,
+    "sync_time_before_ms": 2261,
+    "sync_time_after_ms": 1252,
+    "peak_memory_before_mb": 198,
+    "peak_memory_after_mb": null,
+    "merged_prs": 46,
+    "contributors": 15,
+    "python_floor_old": 3.9,
+    "python_floor_new": 3.11
+  }
+}

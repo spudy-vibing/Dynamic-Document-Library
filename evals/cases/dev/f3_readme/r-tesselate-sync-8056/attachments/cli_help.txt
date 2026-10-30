@@ -1,0 +1,12 @@
+usage: tesselatesync [OPTIONS] SOURCE
+
+Mirror a directory tree to object storage, skipping unchanged files.
+
+options:
+  -h, --help            Show this message and exit
+  --config PATH         Read settings from PATH (default: ./tesselatesync.toml)
+  --workers N           Number of parallel workers (default: 29)
+  --timeout SECONDS     Per-request timeout in seconds (default: 55)
+  --retries N           Retries per failed request (default: 14)
+  --dry-run             Print what would happen without changing anything
+  --verbose             Log every file considered

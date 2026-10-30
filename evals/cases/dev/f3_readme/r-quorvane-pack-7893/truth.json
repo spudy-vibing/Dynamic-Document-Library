@@ -1,0 +1,33 @@
+{
+  "values": {
+    "timeout_s": 24,
+    "workers": 39,
+    "retries": 19,
+    "python_floor": 3.11
+  },
+  "labels": {
+    "timeout_s": [
+      "timeout"
+    ],
+    "workers": [
+      "workers"
+    ],
+    "retries": [
+      "retries"
+    ],
+    "python_floor": [
+      "Python"
+    ]
+  },
+  "derived": {},
+  "facts": {
+    "install_command": "pip install quorvane-pack",
+    "cli_command": "quorvanepack",
+    "cli_flags": "-h/--help, --config, --workers, --timeout, --retries, --dry-run, --verbose",
+    "license": "MIT",
+    "python_floor": ">=3.11",
+    "version": "0.4.9",
+    "extras": "azure, s3",
+    "install_with_extra": "pip install \"quorvane-pack[azure]\""
+  }
+}

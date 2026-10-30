@@ -1,0 +1,84 @@
+{
+  "values": {
+    "revenue_prior": 69500000,
+    "revenue_this": 74600000,
+    "gross_margin_prior_pct": 23.7,
+    "gross_margin_pct": 22.1,
+    "opex_change_pct": 21.8,
+    "active_customers_prior": 4274,
+    "active_customers": 4383,
+    "churn_prior_pct": 4.6,
+    "churn_pct": 4.4,
+    "pipeline_coverage": null
+  },
+  "labels": {
+    "revenue_prior": [
+      "Q3 2026 revenue",
+      "prior-quarter revenue",
+      "revenue"
+    ],
+    "revenue_this": [
+      "Q4 2026 revenue",
+      "revenue"
+    ],
+    "gross_margin_prior_pct": [
+      "prior-quarter gross margin",
+      "gross margin"
+    ],
+    "gross_margin_pct": [
+      "gross margin",
+      "margin"
+    ],
+    "opex_change_pct": [
+      "operating expenses",
+      "opex"
+    ],
+    "active_customers_prior": [
+      "prior-quarter customers",
+      "active customers",
+      "customers"
+    ],
+    "active_customers": [
+      "active customers",
+      "customers"
+    ],
+    "churn_prior_pct": [
+      "prior-quarter churn",
+      "churn"
+    ],
+    "churn_pct": [
+      "churn"
+    ],
+    "pipeline_coverage": [
+      "pipeline coverage"
+    ]
+  },
+  "derived": {
+    "revenue_growth_pct": {
+      "value": 7.3,
+      "formula": "(revenue_this / revenue_prior - 1) * 100"
+    },
+    "revenue_change": {
+      "value": 5100000,
+      "formula": "revenue_this - revenue_prior"
+    },
+    "gross_margin_change_pp": {
+      "value": -1.6,
+      "formula": "gross_margin_pct - gross_margin_prior_pct"
+    },
+    "active_customers_change": {
+      "value": 109,
+      "formula": "active_customers - active_customers_prior"
+    },
+    "churn_change_pp": {
+      "value": -0.2,
+      "formula": "churn_pct - churn_prior_pct"
+    }
+  },
+  "facts": {
+    "company": "Ostrel Biosystems",
+    "period": "Q4 2026",
+    "prior_period": "Q3 2026",
+    "revenue_direction": "up"
+  }
+}

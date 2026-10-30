@@ -1,0 +1,148 @@
+{
+  "values": {
+    "requests_total": 6120773,
+    "requests_failed": 1145729,
+    "peak_error_rate_pct": 36.7,
+    "customers_affected": 2737,
+    "sla_credits_usd": 73800
+  },
+  "labels": {
+    "requests_total": [
+      "total requests",
+      "requests"
+    ],
+    "requests_failed": [
+      "failed requests",
+      "requests failed",
+      "failed"
+    ],
+    "peak_error_rate_pct": [
+      "peak error rate",
+      "error rate"
+    ],
+    "customers_affected": [
+      "customers affected",
+      "affected customers",
+      "customers"
+    ],
+    "sla_credits_usd": [
+      "SLA credits",
+      "service credits",
+      "credits"
+    ]
+  },
+  "derived": {
+    "time_to_detect_min": {
+      "value": 8,
+      "formula": "alert - impact_start (minutes)"
+    },
+    "time_to_mitigate_min": {
+      "value": 41,
+      "formula": "mitigated - impact_start (minutes)"
+    },
+    "duration_min": {
+      "value": 84,
+      "formula": "resolved - impact_start (minutes)"
+    },
+    "minutes_deploy_to_impact_start": {
+      "value": 10,
+      "formula": "impact_start - deploy (minutes)"
+    },
+    "minutes_deploy_to_alert": {
+      "value": 18,
+      "formula": "alert - deploy (minutes)"
+    },
+    "minutes_deploy_to_acknowledged": {
+      "value": 26,
+      "formula": "acknowledged - deploy (minutes)"
+    },
+    "minutes_deploy_to_rollback_start": {
+      "value": 38,
+      "formula": "rollback_start - deploy (minutes)"
+    },
+    "minutes_deploy_to_mitigated": {
+      "value": 51,
+      "formula": "mitigated - deploy (minutes)"
+    },
+    "minutes_deploy_to_resolved": {
+      "value": 94,
+      "formula": "resolved - deploy (minutes)"
+    },
+    "minutes_impact_start_to_alert": {
+      "value": 8,
+      "formula": "alert - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_acknowledged": {
+      "value": 16,
+      "formula": "acknowledged - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_rollback_start": {
+      "value": 28,
+      "formula": "rollback_start - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_mitigated": {
+      "value": 41,
+      "formula": "mitigated - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_resolved": {
+      "value": 84,
+      "formula": "resolved - impact_start (minutes)"
+    },
+    "minutes_alert_to_acknowledged": {
+      "value": 8,
+      "formula": "acknowledged - alert (minutes)"
+    },
+    "minutes_alert_to_rollback_start": {
+      "value": 20,
+      "formula": "rollback_start - alert (minutes)"
+    },
+    "minutes_alert_to_mitigated": {
+      "value": 33,
+      "formula": "mitigated - alert (minutes)"
+    },
+    "minutes_alert_to_resolved": {
+      "value": 76,
+      "formula": "resolved - alert (minutes)"
+    },
+    "minutes_acknowledged_to_rollback_start": {
+      "value": 12,
+      "formula": "rollback_start - acknowledged (minutes)"
+    },
+    "minutes_acknowledged_to_mitigated": {
+      "value": 25,
+      "formula": "mitigated - acknowledged (minutes)"
+    },
+    "minutes_acknowledged_to_resolved": {
+      "value": 68,
+      "formula": "resolved - acknowledged (minutes)"
+    },
+    "minutes_rollback_start_to_mitigated": {
+      "value": 13,
+      "formula": "mitigated - rollback_start (minutes)"
+    },
+    "minutes_rollback_start_to_resolved": {
+      "value": 56,
+      "formula": "resolved - rollback_start (minutes)"
+    },
+    "minutes_mitigated_to_resolved": {
+      "value": 43,
+      "formula": "resolved - mitigated (minutes)"
+    },
+    "failed_request_share_pct": {
+      "value": 18.7,
+      "formula": "requests_failed / requests_total * 100"
+    }
+  },
+  "facts": {
+    "company": "Brightwell Ceramics",
+    "codename": "Larkspur",
+    "service": "search indexer",
+    "date": "1 June 2026",
+    "release": "4.35.3",
+    "root_cause": "Release 4.35.3 changed the index mapping, so the indexer rejected documents with the old field type and search results went stale.",
+    "incident_start_utc": "13:04",
+    "alert_utc": "13:12",
+    "mitigated_utc": "13:45",
+    "resolved_utc": "14:28"
+  }
+}

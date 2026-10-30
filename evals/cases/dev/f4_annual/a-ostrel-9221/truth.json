@@ -1,0 +1,150 @@
+{
+  "values": {
+    "revenue_q1": 31900000,
+    "gross_margin_q1_pct": 28.2,
+    "active_customers_q1": 1119,
+    "revenue_q2": 34100000,
+    "gross_margin_q2_pct": 25.9,
+    "active_customers_q2": 1241,
+    "revenue_q3": 32600000,
+    "gross_margin_q3_pct": 25.7,
+    "active_customers_q3": 1150,
+    "revenue_q4": 29200000,
+    "gross_margin_q4_pct": 27.1,
+    "active_customers_q4": 1042,
+    "revenue_fy_prior": 142200000,
+    "nps": null
+  },
+  "labels": {
+    "revenue_q1": [
+      "Q1 2025 revenue",
+      "Q1 revenue",
+      "revenue"
+    ],
+    "gross_margin_q1_pct": [
+      "Q1 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q1": [
+      "Q1 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q2": [
+      "Q2 2025 revenue",
+      "Q2 revenue",
+      "revenue"
+    ],
+    "gross_margin_q2_pct": [
+      "Q2 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q2": [
+      "Q2 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q3": [
+      "Q3 2025 revenue",
+      "Q3 revenue",
+      "revenue"
+    ],
+    "gross_margin_q3_pct": [
+      "Q3 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q3": [
+      "Q3 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_q4": [
+      "Q4 2025 revenue",
+      "Q4 revenue",
+      "revenue"
+    ],
+    "gross_margin_q4_pct": [
+      "Q4 gross margin",
+      "gross margin",
+      "margin"
+    ],
+    "active_customers_q4": [
+      "Q4 customers",
+      "active customers",
+      "customers"
+    ],
+    "revenue_fy_prior": [
+      "FY2024 revenue",
+      "prior-year revenue",
+      "revenue"
+    ],
+    "nps": [
+      "NPS",
+      "Net Promoter Score",
+      "net promoter"
+    ]
+  },
+  "derived": {
+    "revenue_fy": {
+      "value": 127800000,
+      "formula": "revenue_q1 + revenue_q2 + revenue_q3 + revenue_q4"
+    },
+    "revenue_fy_change": {
+      "value": -14400000,
+      "formula": "revenue_fy - revenue_fy_prior"
+    },
+    "revenue_change_q2": {
+      "value": 2200000,
+      "formula": "revenue_q2 - revenue_q1"
+    },
+    "active_customers_change_q2": {
+      "value": 122,
+      "formula": "active_customers_q2 - active_customers_q1"
+    },
+    "gross_margin_change_q2_pp": {
+      "value": -2.3,
+      "formula": "gross_margin_q2_pct - gross_margin_q1_pct"
+    },
+    "revenue_change_q3": {
+      "value": -1500000,
+      "formula": "revenue_q3 - revenue_q2"
+    },
+    "active_customers_change_q3": {
+      "value": -91,
+      "formula": "active_customers_q3 - active_customers_q2"
+    },
+    "gross_margin_change_q3_pp": {
+      "value": -0.2,
+      "formula": "gross_margin_q3_pct - gross_margin_q2_pct"
+    },
+    "revenue_change_q4": {
+      "value": -3400000,
+      "formula": "revenue_q4 - revenue_q3"
+    },
+    "active_customers_change_q4": {
+      "value": -108,
+      "formula": "active_customers_q4 - active_customers_q3"
+    },
+    "gross_margin_change_q4_pp": {
+      "value": 1.4,
+      "formula": "gross_margin_q4_pct - gross_margin_q3_pct"
+    },
+    "active_customers_change_fy": {
+      "value": -77,
+      "formula": "active_customers_q4 - active_customers_q1"
+    },
+    "revenue_fy_growth_pct": {
+      "value": -10.1,
+      "formula": "(revenue_fy / revenue_fy_prior - 1) * 100"
+    }
+  },
+  "facts": {
+    "company": "Ostrel Biosystems",
+    "fiscal_year": "FY2025",
+    "revenue_direction_h2": "down",
+    "fy_vs_prior_year": "below"
+  }
+}

@@ -1,10 +1,39 @@
 # Dev case seeds (committed; builder agents may read these cases and their results).
-# Held-out seeds are owner-held and never live in this repository (EVALS_PROPOSAL §5.3).
+# Held-out seeds are owner-held and never live in this repository (EVALS_PROPOSAL §5.3);
+# they use this same format and are read by `python -m evals.fixtures.heldout`.
 #
-# family        seed   options (comma-separated; "-" for none)
-f2_quarterly    1903   bad_news
-f2_quarterly    2417   allow_growth,unit
-f2_quarterly    3851   bad_news,unit
-f1_weekly       5120   -
-f1_weekly       5233   missing
-f3_readme       7781   -
+# family            seed   options (comma-separated; "-" for none)
+#   f1_weekly         missing
+#   f2_quarterly      bad_news, unit, allow_growth, yoy (T6), themes
+#   f3_readme         extras, env, changelog (removed flag)
+#   f4_annual         bad_news, yoy (T6), missing
+#   f5_incident       unit, missing
+#   f6_release_notes  missing
+#   f7_robustness     long (100k-token attachment); without it: injected data note (T7)
+#
+# MVP (WP-011): these six lines must never change.
+f2_quarterly        1903   bad_news
+f2_quarterly        2417   allow_growth,unit
+f2_quarterly        3851   bad_news,unit
+f1_weekly           5120   -
+f1_weekly           5233   missing
+f3_readme           7781   -
+# WP-016: full dev set (24 cases: F1 4, F2 6, F3 4, F4 3, F5 3, F6 2, F7 2).
+f1_weekly           5347   -
+f1_weekly           5461   missing
+f2_quarterly        4130   yoy
+f2_quarterly        4563   bad_news,yoy,themes
+f2_quarterly        4988   themes
+f3_readme           7893   extras
+f3_readme           7922   env,changelog
+f3_readme           8056   extras,changelog
+f4_annual           9107   -
+f4_annual           9221   bad_news,missing
+f4_annual           9349   yoy
+f5_incident         6101   -
+f5_incident         6229   missing
+f5_incident         6347   unit
+f6_release_notes    6872   -
+f6_release_notes    6997   missing
+f7_robustness       8461   -
+f7_robustness       8574   long

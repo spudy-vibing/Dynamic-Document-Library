@@ -1,0 +1,49 @@
+{
+  "package": "ostrelix-pack",
+  "version": "0.8.5",
+  "description": "Bundle a static site into a single archive with content hashes.",
+  "command": "ostrelixpack",
+  "requires_python": ">=3.12",
+  "license": "BSD-3-Clause",
+  "flags": [
+    {
+      "flag": "--config PATH",
+      "default": "./ostrelixpack.toml"
+    },
+    {
+      "flag": "--workers N",
+      "default": 12
+    },
+    {
+      "flag": "--timeout SECONDS",
+      "default": 16
+    },
+    {
+      "flag": "--retries N",
+      "default": 11
+    },
+    {
+      "flag": "--dry-run",
+      "default": false
+    },
+    {
+      "flag": "--verbose",
+      "default": false
+    }
+  ],
+  "defaults": {
+    "timeout_s": 16,
+    "workers": 12,
+    "retries": 11
+  },
+  "environment": [
+    {
+      "name": "OSTRELIXPACK_TOKEN",
+      "help": "API token for the storage backend (required)"
+    },
+    {
+      "name": "OSTRELIXPACK_CACHE_DIR",
+      "help": "Where to keep the local state cache (default: ~/.cache)"
+    }
+  ]
+}
