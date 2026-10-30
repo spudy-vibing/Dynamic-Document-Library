@@ -5,7 +5,7 @@ Oct 29, 2026 · Aligned with the BRD dated 2026-10-29 (which now carries these r
 **Changes after BRD alignment**
 - `temperature` is gone everywhere; every generator, prototype, judge and claim-checker call sets `effort` explicitly (`output_config.effort`). The old §12 "side finding" on temperature is resolved and replaced by a note on reproducibility (§12).
 - The eval `LLM` wrapper never uses server-side or client-side refusal fallbacks, asserts the served model, and records `stop_reason: "refusal"` as an error row, never as a score of 0 (§4.1).
-- The DocCode adapter follows the current API: `build() -> Document` scripts with `<script>.mock.json`, presets plus explicit overrides, the `Check` protocol and `checks.custom(fn, name=...)`, the shared ID namespace, data blocks and `Value` nodes, `link_hosts`, FR-CCH-7 and the lock modes. RunRecord/PromptRecord fields are mapped into `GenerationResult`/`CallRecord` (§4.2).
+- The DocCode adapter follows the current API: `build() -> Document` scripts with `<script>.mock.json`, presets plus explicit overrides, the `Check` protocol and `checks.custom(fn, name=...)`, the separate section and node ID namespaces (amended 2026-10-30), data blocks and `Value` nodes, `link_hosts`, FR-CCH-7 and the lock modes. RunRecord/PromptRecord fields are mapped into `GenerationResult`/`CallRecord` (§4.2).
 - New rules and metrics: a figure produced by a `Value` is supported only if the case lists it in `allowed_derived` (§6.1); a locked rerun must be byte-identical with zero calls (D8, §6.1); injected links surviving as clickable are measured from trap T7 (§5.2, §6.1).
 - Coherence layers: the owner keeps the full 0.1.0 scope. The P1–P4 ablation chooses default presets per family and tunes built-in prompts; it does not remove features (§1, §4.3, EVAL-4).
 - Gates, work packages and costs now use the plan's waves, WP numbers and spend caps (§7.2, §7.3, §10). Requirements renumbered and extended to EVAL-1..24 (§9).
@@ -135,7 +135,7 @@ A case is a library-neutral description of a document: purpose, audience, style,
 
 **How `auto` compiles a case** (one rule per spec field, so no hand-tuning per case):
 - `title`, `purpose`, `style` → `Document(title, purpose=..., style=..., effort=<config effort>, model=<config model>)`. The data goes in once as `doc.attach("data", data)`; attachments as further `doc.attach(name, ...)`.
-- Each outline section → `doc.section(title, id=<case section id>, brief=<brief>)`, with one `Prompt` per section whose ID is `<case section id>.text`. Section IDs and prompt IDs share one namespace (FR-DAG-1), so a section and its prompt can never both be called `summary`; mock maps and lock entries key on the `.text` IDs.
+- Each outline section → `doc.section(title, id=<case section id>, brief=<brief>)`, with one `Prompt` per section whose ID is `<case section id>.text`. Section IDs and node IDs (prompts, values, expansions) are separate namespaces (FR-DAG-1, amended 2026-10-30 from decision 0004 R1), so a section and its prompt could share an ID; the adapter still uses the `.text` suffix, so prompt IDs stay distinct from section IDs in reports, and mock maps and lock entries key on the `.text` IDs.
 - `depends_on` → the dependency's prompt is referenced in the instruction (an f-string reference, FR-REF-1), so the dependent prompt sees its output, as B1 does.
 - `data_blocks` → `s.table(...)` / `s.metric(...)` at the start of the section. Both return `None` (FR-DOC-11); the prompt sees the figures through the `data` attachment, never through the block.
 - `allowed_derived` → one `Value` per entry, computed with the fixture's formula, rendered as a metric where the case asks for one and named as a source of `numbers_from` (FR-OUT-4, FR-VAL-3).
@@ -371,13 +371,14 @@ Criteria groups:
 
 ### 6.3 Calibration against humans
 
-- **Labels.** Before G0 sign-off (and therefore before the contract freeze), the owner plus one other person label:
+- **Labels.** Before G0 sign-off (and therefore before the contract freeze), the owner labels alone (owner decision, 2026-10-30):
   - 40 pairwise comparisons (drawn from B0/B1/B2/P* outputs on dev cases);
   - 20 documents on the absolute rubric.
   - About 3 hours in total.
 - **Agreement thresholds before the judge is trusted:**
-  - pairwise agreement with the human majority ≥ 75% on non-tie items;
+  - pairwise agreement with the owner's labels ≥ 75% on non-tie items;
   - absolute quadratic-weighted κ ≥ 0.6 per criterion. Any criterion below 0.6 is reported but not gated.
+- **Human–human agreement** is reported as not measured, because there is one labeller. If a second labeller joins later, the judge is compared with the human majority and human–human agreement is reported (EVAL-13).
 - **When to recalibrate:**
   - 10 new labels whenever the judge model or rubric changes;
   - otherwise, once per release on a sample of new outputs.
@@ -458,7 +459,8 @@ All live runs use the owner's key, either locally or through a `workflow_dispatc
 | Offline | Graders, perturbations, mock adapter, schema checks, import check | No | Every PR (CI) | $0 |
 | MVP | 6 dev cases × 3 reps × {B0, B1, B2}, deterministic metrics plus pairwise | Owner | Once, in Wave 0 after WP-014 | ~$5–10 |
 | Smoke | 6 dev cases × 1 rep × {B1, DC-preset}, deterministic metrics plus pairwise | Owner | On demand | ~$3–5 |
-| G0 baseline | 24 dev × 3 reps × 7 generators (B0–B2, P1–P4) | Owner | G0 (WP-020) | ~$100–160 |
+| G0 shake-out | 24 dev × 1 rep × 7 generators with every grader and judge, through headless Claude Code (`--cli`); unofficial, never the scoreboard | No (subscription) | G0 (WP-020), before the official run | $0 API |
+| G0 baseline | 24 dev × 3 reps × 7 generators (B0–B2, P1–P4), `--live`, under `run.max_usd = 175` (owner, 2026-10-30) | Owner | G0 (WP-020) | ~$100–160 |
 | G3 DocCode | 24 dev × 3 reps × 8 DocCode generators (4 presets + 4 single-layer ablations), baselines reused | Owner | G3 (WP-305), and before any later change to built-in prompts | ~$130–200 |
 | Held-out gate | 24 held-out × 3 reps × 5 generators (B0, B1, B2, DC-basic, DC-recommended) | Owner | G5 (WP-506) and each later minor release | ~$60–120 |
 | DX proxy | 5 agent tries | Owner | G5 (WP-505) | ~$1–5 |
@@ -534,7 +536,7 @@ runs/ (gitignored; uploaded as a CI artifact) <run_id>/
 
 ### 8.3 DX evaluation
 
-- **Human (as BRD §1.5).** Three people new to DocCode, timed from README to a mock-path document, at G0 on the API spike (WP-002) and at G5. Also record where each person got stuck.
+- **Human (as BRD §1.5).** At G0, on the API spike (WP-002): one session by the owner as the developer persona, plus two simulated by agents playing the data-analyst and DevOps/CI personas (the agent-proxy method below). Only the owner's time is a human timing, and the owner knows the BRD, so G0 gives no real newcomer timing (owner decision, 2026-10-30). At G5: three people new to DocCode, timed from README to a mock-path document. Each time, record where each tester got stuck.
 - **Agent proxy (tracked, EVAL-19).** A fresh `claude-sonnet-5-5` agent at an explicit effort, with only the README and a task ("generate a weekly status report from these notes") in an empty sandbox with `MockProvider`. Measured: success rate over 5 tries, turns, and errors hit. It costs about $1–5 and catches documentation regressions between human tests. It does not replace them. Built in WP-505, once the real README exists (WP-503).
 
 ## 9. Requirements
@@ -604,7 +606,7 @@ Total ≈ 12 agent-days (8.75 in Wave 0) plus about one and a half days of owner
 - **Graders.** UNR / silent UNR (with the `allowed_derived` rule), trap hits, XREP, structure, data-block exactness, chatter, constraint adherence, cost and cache from usage. The perturbation tests run in pytest with no key.
 - **Judge.** Pairwise only (B0 vs B1, B2 vs B1), both orders, `claude-opus-5-5` at effort `medium`, through the Message Batches API.
 - **Outputs.** `runs/<id>/` JSONL (`calls`, `errors`, `judge`, `scores`) plus a `report.md` with the §6.5 table, per-trap counts and refusal counts; `compare` for two runs.
-- **First live run.** 6 cases × 3 reps × 3 generators (54 documents), plus 36 pairwise judgements in both orders. Estimated **$5–10**, capped by `max_usd = 15` in `evals/config.toml`. The owner runs it.
+- **First live run.** 6 cases × 3 reps × 3 generators (54 documents), plus 36 pairwise judgements in both orders. Estimated **$5–10**, capped by `max_usd = 15` in `evals/config.toml` (raised to 175 for the G0 run, owner, 2026-10-30). The owner runs it.
 - **Owner follow-up (about 1 hour).** Label 20 of those pairs to get a first agreement estimate.
 
 **Left out of the MVP:** absolute rubric, claim checker, held-out set, prototypes, calibration at full size, DocCode adapter, injected-link grading on HTML. Each of these slots into the same interfaces later.
