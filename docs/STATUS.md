@@ -71,7 +71,8 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
   - Follow-ups: FakeLLM's default responder writes no valid brief or editor JSON (fake runs show warnings), and its cache simulation tracks only the last breakpoint; `BlockOut` has no edited flag. An MVP-size run with all 7 generators projects $24 live (above the $15 per-run cap) or $33 API-equivalent via `--cli`.
   - Deviations from FR-COH (for the owner at G0): the editor reuses the sections' shared prefix; audience and style are in the frame; P3 trims old sections to their first paragraph.
 - [~] WP-018 Calibration tooling (labelling flow, agreement statistics). Agent dispatched 2026-10-30.
-- [~] WP-019 Eval CI (offline job on every PR, owner-approved live workflow). Agent dispatched 2026-10-30.
+- [x] WP-019 Eval CI: merged 2026-10-30. `evals-offline.yml` (every PR and push: tests, import check, case check, fake smoke run twice + compare) and `evals-live.yml` (manual dispatch only, `eval-live` environment with owner approval, projects and caps before running, artifacts only). Eval tests: 404 passed, 2 skipped.
+  - **Owner one-time setup:** GitHub → Settings → Environments → create `eval-live`, add yourself as required reviewer, add `ANTHROPIC_API_KEY` as an environment secret (see `evals/README.md`, CI section).
 - [ ] WP-020 G0 eval run (owner): baselines and prototypes on the dev set, 3 reps; calibration; decision record 0006 (default presets, tuned prompts)
 
 **Library side**
