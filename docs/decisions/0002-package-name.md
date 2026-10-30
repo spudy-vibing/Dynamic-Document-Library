@@ -1,6 +1,6 @@
 # 0002: Package name — `doccode` is blocked by `doc-code`; publish as `doccode-py`, import `doccode`
 
-**Status:** proposed by the Researcher (WP-000), 2026-10-30. **Owner choice needed** (BRD §6 Phase 0: "If it is taken, propose three alternatives in the same decision record and stop for a choice").
+**Status:** accepted by the owner, 2026-10-30: publish as **`doccode-py`**; import name and CLI command stay `doccode`. (Proposed by the Researcher, WP-000.)
 **Requirements:** BRD §8 open question "Package name", BRD Phase 0, DEVELOPMENT_PLAN §0.6 (fallbacks in order: `doccode-py`, `docsascode`, `prosecode`; import name stays `doccode`)
 
 ## Problem

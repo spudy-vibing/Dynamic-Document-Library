@@ -598,7 +598,7 @@ Scope: confirm nothing already does this, choose the PDF engine, set up the repo
 - [ ] PDF engine decision `docs/decisions/0003-pdf-engine.md`: compare WeasyPrint with Typst (the `typst` PyPI package, which has no system dependencies) on install friction across the NFR-1 matrix, typography, `@page`-style headers and page numbers, and what a template designer has to learn. WeasyPrint stays the default unless the record recommends Typst and the owner approves; a switch updates FR-RND-5/6/9 and NFR-8 accordingly.
 - [ ] API spike, `docs/decisions/0004-api-spike.md`. One agent spends at most two days on a throwaway branch (`spike/api`, never merged) building UC-1 and the §7 example end to end: `MockProvider`, ready-queue execution, one expansion, Markdown and HTML output. Three people from the §2 personas then try it for 30 minutes each, with one live call made by the owner. The record captures the time each took to reach a first document, what confused them, and the API changes recommended. The owner approves those changes into this BRD **before** the contract freeze.
 - [ ] Look up, from the official Anthropic docs, the current model IDs (for `DEFAULT_MODEL`, FR-PRV-3) and the current Messages request shape (FR-PRV-2), and record them in `docs/decisions/0005-default-model.md`, so the contract freeze can define `DEFAULT_MODEL`.
-- [ ] Confirm the package name `doccode` is free on PyPI. If it is taken, propose three alternatives in the same decision record and stop for a choice.
+- [x] ~~Confirm the package name `doccode` is free on PyPI.~~ Done (decision 0002): `doccode` is blocked by the existing `doc-code`; the owner chose to publish as `doccode-py`, with import name and CLI command `doccode` (2026-10-30).
 - [ ] `pyproject.toml`, `src/` layout, ruff, mypy, pytest, pre-commit, GitHub Actions running lint, types and tests on the version matrix (NFR-1).
 - [ ] Socket-blocking test fixture (NFR-6) and an empty test suite that passes.
 - [ ] Eval MVP (EVAL-1, 2, 8, 9, 21): case schema, `Generator` protocol, the `LLM` wrapper, six dev cases, B0–B2, the deterministic graders and the pairwise judge, with a first live run of about $5–10 made by the owner.
@@ -800,7 +800,7 @@ Notes:
 
 ## 8. Open questions
 
-- [ ] Package name: `doccode` is the working name; confirm availability on PyPI in Phase 0.
+- [x] ~~Package name~~ Resolved (owner, 2026-10-30, decision 0002): distribution `doccode-py`; `import doccode`; command `doccode`.
 - [x] ~~Should the f-string token approach be primary?~~ Resolved: f-strings with `ctx` references are primary (FR-CTX-4); `refs=` is the documented explicit alternative. The API spike (Phase 0) can reopen this.
 - [ ] PDF engine: WeasyPrint or Typst? Decided by `docs/decisions/0003-pdf-engine.md` in Phase 0.
 - [x] ~~Should `doccode run` use `doccode.lock/` automatically when it exists, or only with `--lock`?~~ Resolved (owner, 2026-10-30): only with `--lock`/`--locked` in 0.1.0; revisit after user feedback.

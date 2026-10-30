@@ -29,8 +29,8 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [x] `git init` locally; `docs/` and `evals/` committed (offline fake-mode scoreboard summaries git-ignored). GitHub repo still to be created by the owner (G0 item). 2026-10-30
 - [x] Plan §0.6 standing decisions, BRD §1.5 targets and §1.7 assumptions confirmed; BRD §8 questions resolved except package name, PDF engine (WP-000) and the post-0.1.0 second provider. Open item: the second labeller is not yet named. 2026-10-30
 - [x] Per-wave spend caps set (table below). 2026-10-30
-- [ ] **Package name (decision 0002):** `doccode` is effectively blocked on PyPI (it normalises to the existing `doc-code`). Recommended: publish as `doccode-py`, keep `import doccode` and the `doccode` command. Alternatives: `pydoccode`, `docsascode`.
-- [ ] **Create the GitHub repo and push** (the agent's `gh repo create` was blocked by the permission check): `gh repo create spudy-vibing/doccode --private --source . --remote origin --push`.
+- [x] **Package name (decision 0002):** `doccode-py` on PyPI; `import doccode`; command `doccode`. Owner, 2026-10-30.
+- [x] **GitHub repo:** https://github.com/spudy-vibing/Dynamic-Document-Library (public, default branch `master`); local `main` tracks `origin/master`. Pushed through `ba52d0e`, 2026-10-30.
 
 ## Planning documents
 
@@ -63,7 +63,7 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [ ] WP-020 G0 eval run (owner): baselines and prototypes on the dev set, 3 reps; calibration; decision record 0006 (default presets, tuned prompts)
 
 **Library side**
-- [x] WP-000 Prior art, PyPI name, PDF engine and model IDs: decision records 0001, 0002, 0003, 0005 merged 2026-10-30. Near-duplicate gate passed (closest: Genji). WeasyPrint kept. `DEFAULT_MODEL = claude-sonnet-5-5`. Sonnet cache-read price corrected to $0.10 in `evals/config.toml`; other prices verified. Owner still to approve 0003 and pick the package name (0002).
+- [x] WP-000 Prior art, PyPI name, PDF engine and model IDs: decision records 0001, 0002, 0003, 0005 merged 2026-10-30. Near-duplicate gate passed (closest: Genji). WeasyPrint kept. `DEFAULT_MODEL = claude-sonnet-5-5`. Sonnet cache-read price corrected to $0.10 in `evals/config.toml`; other prices verified. Owner still to approve 0003.
 - [ ] WP-001 Repo scaffold (pyproject, CI matrix, ownership and traceability scripts)
 - [ ] WP-002 API spike and three-person user test (decision record 0004)
 - [ ] WP-003 Contract freeze (after WP-020 and owner approval of spike-driven BRD changes)
@@ -193,3 +193,4 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | 2026-10-30 | Added unofficial `--cli` backend (headless Claude Code, no API key); ran the MVP set once (1 rep); fixed two grader bugs and a flaky compare test. |
 | 2026-10-30 | Owner allowed period differences in quarterly cases; cases regenerated, CLI run rescored, everything committed. |
 | 2026-10-30 | Root README committed (`af92cf0`); branch renamed to `main`; GitHub repo creation blocked by permission check (owner to do). Dispatched agents in worktrees: WP-000, WP-015, WP-016, WP-017. |
+| 2026-10-30 | Owner chose `doccode-py`; repo is on GitHub (Dynamic-Document-Library, public); pushed. |
