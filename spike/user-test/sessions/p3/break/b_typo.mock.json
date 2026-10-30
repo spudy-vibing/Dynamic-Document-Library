@@ -1,0 +1,5 @@
+{
+  "shipped": "- **Billing export v2**: finance can now pull monthly exports without engineering help.\n- **SSO for EU tenants**: unblocks two enterprise renewals.",
+  "next-week": "1. Finish the search re-index.\n2. Ship the rate-limit dashboard.\n3. Close the data-retention wording with legal.",
+  "nextweek": "typo key added on purpose (P3 task 4b)"
+}
