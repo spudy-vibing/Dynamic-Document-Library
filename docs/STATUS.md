@@ -54,17 +54,19 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 **Rest of Wave 0 evals**
 - [x] WP-015 Absolute rubric (six criteria) and claim checker: merged 2026-10-30 (`4bc59c7`). Six criteria in three grouped calls per doc; claim checker = Sonnet extraction + deterministic re-check against truth.json; `judge --only {pairwise,absolute,claims}`. Tests: 318 passed, 2 skipped. MVP live projection $6.70 → $10.76.
   - Follow-ups: claim-checker precision not yet validated on the perturbation suite with a real model (the near-collision swap perturbation belongs in `evals/perturb/`); fake runs extract almost no claims.
-- [~] WP-016 Full dev set (24 cases, F1–F7) and held-out generators with owner-held seeds
+- [x] WP-016 Full dev set (24 cases, F1–F7) and held-out generators with owner-held seeds: merged 2026-10-30. New graders: `trap.t6_period`, `links.py` (T7), `flags.py` (README flags). Held-out: `python -m evals.fixtures.heldout --seeds <outside repo> --out <outside repo>`. Eval tests: 389 passed, 2 skipped. Full dev set × 3 reps, B0–B2 + judges, projects $57.71 expected (over the $15 per-run cap).
+  - Follow-ups: add `html` to `GenerationResult` (for the DocCode adapter and T7); perturbation samples still cover only the MVP cases; held-out scoreboards must commit aggregates only.
 - [x] WP-017 Coherence prototypes P1–P4 and the ablation report: merged 2026-10-30 (`ac7ad21`). p1-frame, p2-brief, p3-flow, p4-editor on top of B1; FR-PRV-7 request layout; ablation section in the report; 8 judge pairs (each prototype vs B1 and B0). Tests: 266 passed, 2 skipped.
   - Follow-ups: FakeLLM's default responder writes no valid brief or editor JSON (fake runs show warnings), and its cache simulation tracks only the last breakpoint; `BlockOut` has no edited flag. An MVP-size run with all 7 generators projects $24 live (above the $15 per-run cap) or $33 API-equivalent via `--cli`.
   - Deviations from FR-COH (for the owner at G0): the editor reuses the sections' shared prefix; audience and style are in the frame; P3 trims old sections to their first paragraph.
 - [~] WP-018 Calibration tooling (labelling flow, agreement statistics). Agent dispatched 2026-10-30.
-- [ ] WP-019 Eval CI (offline job on every PR, owner-approved live workflow)
+- [~] WP-019 Eval CI (offline job on every PR, owner-approved live workflow). Agent dispatched 2026-10-30.
 - [ ] WP-020 G0 eval run (owner): baselines and prototypes on the dev set, 3 reps; calibration; decision record 0006 (default presets, tuned prompts)
 
 **Library side**
 - [x] WP-000 Prior art, PyPI name, PDF engine and model IDs: decision records 0001, 0002, 0003, 0005 merged 2026-10-30. Near-duplicate gate passed (closest: Genji). WeasyPrint kept. `DEFAULT_MODEL = claude-sonnet-5-5`. Sonnet cache-read price corrected to $0.10 in `evals/config.toml`; other prices verified. Owner still to approve 0003.
-- [ ] WP-001 Repo scaffold (pyproject, CI matrix, ownership and traceability scripts)
+- [x] WP-001 Repo scaffold: merged 2026-10-30. `doccode-py`, src layout, NFR-2 deps, CI matrix (ubuntu 3.10–3.14, macOS, Windows), `make check` green (48 library tests, 100% coverage, ownership + traceability OK: 170 requirements, no dangling IDs).
+  - Gaps for the owner: no LICENSE yet (NFR-4 says MIT); `doccode` console script left to WP-408; a root `conftest.py` keeps the library and eval suites separate.
 - [ ] WP-002 API spike and three-person user test (decision record 0004)
 - [ ] WP-003 Contract freeze (after WP-020 and owner approval of spike-driven BRD changes)
 
