@@ -63,7 +63,7 @@ enabled = true
 [run]
 case_set = "dev"                  # evals/cases/<case_set>/
 reps = 3
-max_usd = 15.0                    # the harness refuses to start a run projected above this (EVAL-20)
+max_usd = 175.0                   # owner, 2026-10-30 (G0 run); the harness refuses runs projected above this (EVAL-20)
 max_concurrency = 4
 refusal_rate_limit = 0.02         # above this, a generator's results are marked not comparable
 

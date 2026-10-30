@@ -29,6 +29,17 @@ All resolved on 2026-10-30 (owner accepted every recommendation).
 - [x] `git init` locally; `docs/` and `evals/` committed (offline fake-mode scoreboard summaries git-ignored). GitHub repo still to be created by the owner (G0 item). 2026-10-30
 - [x] Plan §0.6 standing decisions, BRD §1.5 targets and §1.7 assumptions confirmed; BRD §8 questions resolved except package name, PDF engine (WP-000) and the post-0.1.0 second provider. Open item: the second labeller is not yet named. 2026-10-30
 - [x] Per-wave spend caps set (table below). 2026-10-30
+- [x] **Second batch of owner decisions (2026-10-30, all recommendations accepted):**
+  1. MIT licence (`LICENSE`, `pyproject.toml`).
+  2. WeasyPrint (decision 0003 accepted).
+  3. `DEFAULT_MODEL = claude-sonnet-5-5`, judge Opus 5.5 (decision 0005 accepted).
+  4. BRD fixes from 0005: structured output via `output_config.format`; `model_context_window_exceeded` counts as truncation; Haiku long-context pricing (BRD amendment in progress).
+  5. WP-017 prototype deviations accepted provisionally (editor reuses the shared prefix; audience and style in the frame; P3 trims old sections); confirmed or rejected with G0 ablation data.
+  6. Owner labels alone for calibration; human–human agreement not measured unless a second labeller joins later.
+  7. Spike sessions: one by the owner (P1 developer persona) plus two simulated by agents (P2 data analyst, P3 DevOps/CI).
+  8. Per-run cap `run.max_usd` raised to $175 (inside the $200 Wave 0 cap).
+  9. G0: a full `--cli` run (1 rep) first to shake out graders and judges, then the official `--live` run with 3 reps.
+  10. Spike API changes R1–R12 accepted into the BRD before the freeze; R13 after the user sessions (BRD amendment in progress).
 - [x] **Package name (decision 0002):** `doccode-py` on PyPI; `import doccode`; command `doccode`. Owner, 2026-10-30.
 - [x] **GitHub repo:** https://github.com/spudy-vibing/Dynamic-Document-Library (public, default branch `master`); local `main` tracks `origin/master`. Pushed through `ba52d0e`, 2026-10-30.
 

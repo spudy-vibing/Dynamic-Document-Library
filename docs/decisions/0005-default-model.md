@@ -1,6 +1,6 @@
 # 0005: Default model — `claude-sonnet-5-5`; current Messages API request shape
 
-**Status:** proposed by the Researcher (WP-000), 2026-10-30. Confirmed or changed at G3 (decision 0007).
+**Status:** accepted by the owner, 2026-10-30: `DEFAULT_MODEL = "claude-sonnet-5-5"`; judge `claude-opus-5-5`. Confirmed or changed at G3 (decision 0007).
 **Requirements:** FR-PRV-1, FR-PRV-2, FR-PRV-3 (`DEFAULT_MODEL`), FR-PRV-5, FR-PRV-6 (pricing table), FR-PRV-7 (cache prefix), FR-PRV-8 (refusals), FR-EXE-6, FR-EXE-7, FR-PRM-1, FR-PRM-7, BRD §10 item 7, EVAL-12, EVAL-20, EVAL-21
 
 All facts below come from the official Anthropic docs (platform.claude.com), read on 2026-10-30, not from memory. Prices are USD per million tokens (MTok).

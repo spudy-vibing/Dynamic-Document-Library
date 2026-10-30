@@ -13,8 +13,8 @@ dynamic = ["version"]
 description = "Write documents like code: multi-section LLM documents defined in Python, run as a DAG, rendered through templates."
 readme = "README.md"
 requires-python = ">=3.10"
-# TODO(owner): licence not chosen yet. NFR-4 and DEVELOPMENT_PLAN WP-001 specify MIT; add
-# `license = "MIT"`, `license-files = ["LICENSE"]` and a LICENSE file once the owner decides.
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Shubham Upadhyay" }]
 keywords = ["llm", "documents", "reports", "dag", "templates", "anthropic"]
 classifiers = [

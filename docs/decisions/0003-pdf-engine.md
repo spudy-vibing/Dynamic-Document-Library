@@ -1,6 +1,6 @@
 # 0003: PDF engine — keep WeasyPrint
 
-**Status:** proposed by the Researcher (WP-000), 2026-10-30. The owner approves the PDF engine (DEVELOPMENT_PLAN §0.6).
+**Status:** accepted by the owner, 2026-10-30: WeasyPrint. (Proposed by the Researcher, WP-000.)
 **Requirements:** FR-RND-5, FR-RND-6, FR-RND-9, NFR-1, NFR-2 (`pdf` extra), NFR-8, NFR-15, NFR-22, NFR-24, BRD §9 risk "WeasyPrint system dependencies"
 
 ## Problem

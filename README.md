@@ -76,4 +76,4 @@ make check             # lint, format, mypy --strict, tests + coverage, ownershi
 
 ## License
 
-Not chosen yet.
+MIT. See `LICENSE`.
