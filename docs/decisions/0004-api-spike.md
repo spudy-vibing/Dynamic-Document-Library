@@ -171,30 +171,42 @@ Run per `spike/user-test/SESSION_SCRIPT.md`. One `RESULTS_TEMPLATE.md` copy per 
 - Debrief answers 1–2 (mental model correct?):
 - Key quotes:
 
-### Session 2: P2 Data scientist / analyst
+### Session 2: P2 Data scientist / analyst — SIMULATED (agent playing P2; weaker evidence than a real user)
 
-- Date, tester background:
-- **Time to first document:** ____
-- Tasks 2–4:
-- Confusion codes seen:
-- Notebook experience:
-- Key quotes:
+- Date, tester background: 2026-10-30; agent persona per BRD §2; notebook cells run on a real IPython kernel via `nbclient`. Full sheet: branch `spike/session-p2`, `spike/user-test/sessions/p2/RESULTS.md`.
+- **Time to first document:** about 7:30 (estimated; meets ≤ 10:00) with `uv` already installed; 11–14 min if P2 must install `uv` first.
+- Tasks 2–4: all completed unassisted but over budget (≈8:30 vs 5; ≈5:00 vs 3; ≈6:30 vs 4, borderline).
+- Confusion codes seen: C1 variant (a `Value`'s repr shows a token, not the number), C4 (fixed in about a minute from the error text), C14 (the no-provider hint suggests a CLI command, which doesn't fit a notebook), C15 (`UnknownReferenceError: value growth belongs to another document` when a `Value` is reused across documents).
+- New problems:
+  - **Silent token in output:** `s.metric("Growth", ctx.growth)` raises nothing and renders `**Growth:** ⟦doccode:ctx:growth⟧`.
+  - **Notebook re-runs:** re-running a section cell silently adds a duplicate section (`overview.1`); touching `doc` after `execute()` raises `DocumentFrozenError`.
+  - **Display:** displaying `content` dumps ~2,000 characters; there is no documented `to_markdown()`; `<script>.mock.json` next to a notebook is ignored.
+  - **Docs:** docstrings quote spec IDs ("FR-VAL-1: Python compute node."); three ways to put data into a prompt with no stated preference; metric values unformatted (`12400000`).
+- Notebook experience: sync `execute()` inside a running kernel worked (supports FR-EXE-1). Plain Python variables were simpler than `Value` for figures computed from the data alone.
 
-### Session 3: P3 DevOps / CI owner
+### Session 3: P3 DevOps / CI owner — SIMULATED (agent playing P3; weaker evidence than a real user)
 
-- Date, tester background:
-- **Time to first document:** ____
-- Tasks 2–4 (incl. which error messages in Task 4 were actionable):
-- Confusion codes seen:
-- Trust in `--dry-run` for CI:
-- Key quotes:
+- Date, tester background: 2026-10-30; agent persona per BRD §2. It read `spike/README.md` first (a deviation from the script). Full sheet: branch `spike/session-p3`, `spike/user-test/sessions/p3/RESULTS.md`.
+- **Time to first document:** about 5:30 (estimated; meets ≤ 10:00); +2–5 min without `uv`.
+- Tasks 2–4: all completed; Task 3 (pytest test) ≈9 min vs 5 (example module name starts with a digit; `execute()` and `RunRecord` undocumented); Task 4 ≈6 min vs 4.
+- Confusion codes seen: C2/C10 variant, C13, C14 (good: clear `ConfigError`, exit 3; good "did you mean 'next-week'?" for mock keys), C15.
+- Actionable errors in Task 4: mostly. Not actionable: `-o x.txt` hints at a `format=` the CLI lacks; a missing script or bad `--entry` prints a raw traceback (exit 1); usage errors and validation errors both exit 2; `--help` documents no exit codes.
+- **Silent failure (most serious):** removing only the first `f` of a two-line f-string sends `{shipped}` and `{wip}` to the model literally, with exit 0 from `plan` and `run --dry-run` and no warning.
+- Trust in `--dry-run` for CI: good model ("it's a Makefile"), but the HTML footer timestamp makes output non-deterministic, `run` without `-o` writes into the current directory, and `plan` shows no cost estimate and does not validate the mock map. Likelihood to use 3/5, 4/5 with a spend cap, persistent cache and the silent-placeholder fix.
 
 ### Across sessions
 
-- Median time to first document:
-- Findings confirmed (F-numbers):
-- Findings not seen:
-- New problems not predicted:
+- Median time to first document: no median yet (owner's Session 1 pending); simulated sessions ≈5:30 and ≈7:30.
+- Findings confirmed: F3 (brace/placeholder pitfalls, now R6/R12), F4 (format spec on `Value`; the error text works, R3 supported), F8 (mock output truncation looks like failure), F6-adjacent (references in the wrong place fail silently).
+- Findings not seen: C3, C6, C11 (P2); several P1-track codes not exercised by P2/P3 tracks.
+- New problems not predicted, proposed for the owner (not yet in the BRD):
+  - N1. Any unresolved token or `{name}` reaching rendered output or a provider request is an error, never silent: covers `ctx` in `metric()`/`table()` (P2) and the mixed f-string/plain-string case (P3). Extends FR-REF-8 / R6.
+  - N2. Deterministic rendering: no wall-clock timestamp in HTML/PDF by default (NFR on reproducibility; FR-RND).
+  - N3. CLI hygiene per FR-CLI-2: discovery failures are one-line errors with documented exit codes, no traceback without `--debug`; `--help` lists exit codes; `run` without `-o` prints to stdout or errors instead of writing into the CWD.
+  - N4. `plan` validates the mock map and shows a cost estimate (FR-DAG-3/4, FR-EXE-7).
+  - N5. Notebook ergonomics: `_repr_markdown_` on content, a documented `to_markdown()`, a warning on duplicate section titles, guidance for re-running cells (FR-EXE-1 persona P2).
+  - N6. Docstrings explain behaviour in plain words; FR IDs only in a "See also".
+  - N7. Docs position `Value` for figures that depend on prompt outputs or need to be tracked; plain Python for figures computed only from inputs.
 
 ## Owner's live call (owner fills in)
 

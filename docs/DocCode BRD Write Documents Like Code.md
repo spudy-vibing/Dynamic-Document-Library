@@ -6,7 +6,7 @@ Oct 29, 2026 · @Shubham · Amended 2026-10-30 from decisions 0004 (API spike) a
 
 DocCode is a lightweight, open-source Python library that lets developers define a document as code. Prompts sit inside sections, dependencies between them are explicit, and a single `execute()` runs every prompt and renders the result. Content generation and visual design are strictly separated: the library produces a design-agnostic content model, and swappable templates turn it into PDF, HTML, Markdown or JSON.
 
-DocCode is the working name (earlier drafts called it DCP). The PyPI package name is still to be confirmed; see Open questions.
+DocCode is the working name (earlier drafts called it DCP). It is published on PyPI as `doccode-py`; the import name and CLI command are `doccode` (decision 0002).
 
 ### 1.1 Problem
 

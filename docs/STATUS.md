@@ -212,3 +212,4 @@ Caps cover Anthropic API spend on the owner's key and include the plan's 20% con
 | 2026-10-30 | Root README committed (`af92cf0`); branch renamed to `main`; GitHub repo creation blocked by permission check (owner to do). Dispatched agents in worktrees: WP-000, WP-015, WP-016, WP-017. |
 | 2026-10-30 | Owner chose `doccode-py`; repo is on GitHub (Dynamic-Document-Library, public); pushed. |
 | 2026-10-30 | Merged WP-016, WP-001, WP-019, WP-018; spike WP-002 built; owner's second batch of decisions applied (MIT, WeasyPrint, Sonnet default, $175 run cap); GitHub CI green. BRD amendment agent and two simulated spike sessions dispatched. |
+| 2026-10-30 | BRD amendments merged (R1–R12, 0005 fixes, FR-DYN-7 new; 171 requirements). Simulated P2 and P3 spike sessions recorded in 0004 with proposed new items N1–N7 for the owner. Full `--cli` shakeout run (`cli-g0-shakeout`) started. |
