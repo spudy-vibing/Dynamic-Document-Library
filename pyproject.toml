@@ -6,10 +6,8 @@ requires = ["hatchling>=1.24"]
 build-backend = "hatchling.build"
 
 [project]
-# PROVISIONAL distribution name: `doccode` is blocked on PyPI by the similar name `doc-code`.
-# Decision 0002 (docs/decisions/0002-package-name.md) recommends `doccode-py`; the owner has not
-# chosen yet. This is the only place the distribution name is set. The import package and the CLI
-# command stay `doccode` whatever is chosen.
+# Distribution name per decision 0002 (accepted by the owner): `doccode` is blocked on PyPI by
+# the similar name `doc-code`. The import package and the CLI command are `doccode`.
 name = "doccode-py"
 dynamic = ["version"]
 description = "Write documents like code: multi-section LLM documents defined in Python, run as a DAG, rendered through templates."
@@ -58,7 +56,8 @@ dev = [
 # The `doccode` console script is added by WP-408 (DEVELOPMENT_PLAN §3, append-only edit),
 # when src/doccode/cli/main.py exists.
 
-# TODO(owner): add [project.urls] once the GitHub repository exists (G0).
+[project.urls]
+Repository = "https://github.com/spudy-vibing/Dynamic-Document-Library"
 
 # `uv run` / `uv sync` install the dev extra by default, so `uv run pytest` works out of the box.
 [dependency-groups]

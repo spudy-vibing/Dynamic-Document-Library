@@ -65,9 +65,9 @@ See `evals/README.md` for the commands, what each mode costs and what it does an
 
 ## Developing the library
 
-The library lives in `src/doccode/` (currently only the scaffold). The PyPI distribution
-name is provisional (`doccode-py`, see `docs/decisions/0002-package-name.md`); the import
-name and the CLI are `doccode`.
+The library lives in `src/doccode/` (currently only the scaffold). It is published on PyPI
+as `doccode-py` (`docs/decisions/0002-package-name.md`); the import name and the CLI are
+`doccode`.
 
 ```sh
 uv run pytest          # library tests, fully offline (sockets are blocked)
