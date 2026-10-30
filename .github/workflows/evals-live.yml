@@ -1,0 +1,162 @@
+# Owner-approved live eval run (WP-019; EVAL-18, EVAL-20; EVALS_PROPOSAL §7.3).
+#
+# Manual only (workflow_dispatch): never runs on push or pull requests, so a fork's PR can never
+# reach it, and the job is skipped outright in any repository other than the owner's.
+# The job runs in the `eval-live` GitHub Environment, which holds ANTHROPIC_API_KEY as an
+# environment secret and requires the owner's approval before the job starts. The key is
+# exposed to the single step that calls the API, never to the projection or upload steps.
+#
+# Order: validate inputs -> `python -m evals project` -> refuse above the cap -> `all --live`
+# -> upload the report and the scoreboard summary as artifacts. Nothing is ever committed:
+# the token is read-only. To publish a scoreboard summary, the owner downloads the artifact
+# and commits it under evals/scoreboard/ in a normal PR.
+#
+# One-time setup: see evals/README.md, "CI".
+name: evals-live
+
+on:
+  workflow_dispatch:
+    inputs:
+      case_set:
+        description: Case set under evals/cases/ (held-out runs are local only, EVAL-6)
+        type: choice
+        options: [dev]
+        default: dev
+      cases:
+        description: Space-separated case IDs; empty = every case in the case set
+        type: string
+        default: w-calderwyn-5120 q-brightwell-2417 r-halcyx-sync-7781 a-calderwyn-9349 i-larkspur-6347 n-brindle-audit-6997
+      generators:
+        description: Space-separated generator names
+        type: string
+        default: b0-oneshot b1-parallel
+      reps:
+        description: Reps per (case, generator)
+        type: choice
+        options: ["1", "2", "3"]
+        default: "1"
+      max_usd:
+        description: Cap for this run in USD; the effective cap is the lower of this and run.max_usd in evals/config.toml
+        type: string
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-live
+  cancel-in-progress: false
+
+env:
+  UV_FROZEN: "1"
+
+jobs:
+  live:
+    name: live eval (owner-approved)
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'spudy-vibing/Dynamic-Document-Library'
+    runs-on: ubuntu-latest
+    environment: eval-live
+    timeout-minutes: 240
+    env:
+      # Inputs reach the shell only through the environment, never by template expansion.
+      CASE_SET: ${{ inputs.case_set }}
+      CASES: ${{ inputs.cases }}
+      GENERATORS: ${{ inputs.generators }}
+      REPS: ${{ inputs.reps }}
+      MAX_USD: ${{ inputs.max_usd }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          # No shared cache in the job that holds the key.
+          enable-cache: false
+
+      - name: Validate inputs and build the argument list
+        id: args
+        run: |
+          for v in CASE_SET CASES GENERATORS; do
+            if [[ ! "${!v}" =~ ^[A-Za-z0-9._\ -]*$ ]]; then
+              echo "::error::$v may contain only letters, digits, '.', '_', '-' and spaces"; exit 1
+            fi
+          done
+          [[ "$REPS" =~ ^[1-9]$ ]] || { echo "::error::reps must be 1-9"; exit 1; }
+          [[ "$MAX_USD" =~ ^[0-9]+(\.[0-9]+)?$ ]] || { echo "::error::max_usd must be a number"; exit 1; }
+          echo "run_id=live-gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      - name: Project the cost (python -m evals project)
+        run: |
+          read -ra gens <<<"$GENERATORS"
+          read -ra cases <<<"$CASES"
+          args=(--case-set "$CASE_SET" --reps "$REPS" --generators "${gens[@]}")
+          if (( ${#cases[@]} )); then args+=(--cases "${cases[@]}"); fi
+          uv run --project evals python -m evals project "${args[@]}"
+
+      - name: Refuse above the cap (EVAL-20)
+        run: |
+          read -ra gens <<<"$GENERATORS"
+          read -ra cases <<<"$CASES"
+          args=(--case-set "$CASE_SET" --reps "$REPS" --generators "${gens[@]}")
+          if (( ${#cases[@]} )); then args+=(--cases "${cases[@]}"); fi
+          uv run --project evals python - "${args[@]}" <<'PY'
+          import os, sys
+          from evals import runner
+          from evals.__main__ import _plan, parser
+          from evals.core.config import load_config
+
+          config = load_config()
+          args = parser().parse_args(["project", *sys.argv[1:]])
+          cases, gens, reps, _ = _plan(args, config)
+          proj = runner.project(cases, gens, reps, config)
+          config_cap = float(config["run"]["max_usd"])
+          cap = min(float(os.environ["MAX_USD"]), config_cap)
+          print(f"expected ${proj.expected:.2f}, worst case ${proj.worst:.2f}; "
+                f"cap ${cap:.2f} (input max_usd ${float(os.environ['MAX_USD']):.2f}, run.max_usd ${config_cap:.2f})")
+          if proj.expected > cap:
+              print(f"::error::refusing to start: expected cost ${proj.expected:.2f} exceeds the cap ${cap:.2f}")
+              sys.exit(2)
+          PY
+
+      - name: Live run (run, grade, judge, report)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RUN_ID: ${{ steps.args.outputs.run_id }}
+        run: |
+          read -ra gens <<<"$GENERATORS"
+          read -ra cases <<<"$CASES"
+          args=(--case-set "$CASE_SET" --reps "$REPS" --generators "${gens[@]}")
+          if (( ${#cases[@]} )); then args+=(--cases "${cases[@]}"); fi
+          # `--live` projects again and refuses above run.max_usd itself.
+          uv run --project evals python -m evals all --live --run-id "$RUN_ID" "${args[@]}"
+
+      - name: Job summary
+        if: always()
+        env:
+          RUN_ID: ${{ steps.args.outputs.run_id }}
+        run: |
+          report="evals/runs/$RUN_ID/report.md"
+          if [[ -f "$report" ]]; then cat "$report" >> "$GITHUB_STEP_SUMMARY"; else echo "No report for $RUN_ID." >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload the report and scoreboard summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evals-report-${{ steps.args.outputs.run_id }}
+          path: |
+            evals/runs/${{ steps.args.outputs.run_id }}/report.md
+            evals/runs/${{ steps.args.outputs.run_id }}/manifest.json
+            evals/scoreboard/${{ steps.args.outputs.run_id }}.summary.json
+            evals/scoreboard/${{ steps.args.outputs.run_id }}.md
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Upload the full run directory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evals-run-${{ steps.args.outputs.run_id }}
+          path: evals/runs/${{ steps.args.outputs.run_id }}/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -160,6 +160,66 @@ submitted is collected rather than paid for again.
 `evals/scoreboard/` are committed (FAKE summaries, `fake-*`, are ignored there too). Held-out
 runs commit aggregate summaries only.
 
+## CI (WP-019)
+
+Two workflows, separate from the library's `ci.yml`. The root `conftest.py` keeps the eval
+suite out of the library's `pytest` run, so nothing runs twice.
+
+**`evals-offline.yml`** runs on every pull request and every push to `master` (and `main`).
+It holds no secret and never calls a model: read-only token, FakeLLM only, uv cached on
+`evals/uv.lock`. Steps:
+
+1. `uv run --project evals pytest`: graders, perturbations, null baseline, schema, judges,
+   and the workflow tests (`tests/test_ci_workflows.py`).
+2. `python -m evals.checks.check_imports`: nothing outside the adapter imports `doccode` (EVAL-8).
+3. `python -m evals.fixtures.make_cases --check`: the dev cases regenerate from their seeds (EVAL-7).
+4. A FAKE `python -m evals all` on four cases × 1 rep × B0, B1, B2, P1, P4, run twice and
+   compared with `--fail-on-regression` (the fake pipeline must be deterministic). The report
+   and compare output are uploaded as the `evals-offline-smoke` artifact.
+
+There is no committed FAKE baseline: FAKE summaries are not results (and `fake-*` is
+gitignored). Run the same thing locally with `make evals` (it is not part of `make check`,
+which is the library gate).
+
+**`evals-live.yml`** is the owner-approved live run (EVAL-18, EVAL-20). It starts only from
+**Actions → evals-live → Run workflow** (`workflow_dispatch`): never on push or pull request,
+so a fork's PR cannot reach it, and the job is skipped in any repository other than
+`spudy-vibing/Dynamic-Document-Library`. Inputs:
+
+| Input | Default | Notes |
+|---|---|---|
+| `case_set` | `dev` | Only `dev`. Held-out runs stay on the owner's machine (EVAL-6). |
+| `cases` | 6 dev cases, one per family F1–F6 | Space-separated IDs; empty = the whole case set |
+| `generators` | `b0-oneshot b1-parallel` | Space-separated names |
+| `reps` | `1` | 1–3 |
+| `max_usd` | `5` | The effective cap is the lower of this and `run.max_usd` in `config.toml`; raising the cap above `config.toml` needs a PR that changes `config.toml` |
+
+The defaults are the smoke run (about $2.30 expected). The job waits for the owner's approval,
+then: validates the inputs → `python -m evals project` → refuses to start if the expected cost
+exceeds the cap → `python -m evals all --live --run-id live-gh-<run>-<attempt>` (which projects
+and checks `run.max_usd` again) → writes `report.md` to the job summary → uploads
+`evals-report-<run_id>` (report, manifest, scoreboard summary; 90 days) and `evals-run-<run_id>`
+(the whole run directory; 14 days). `ANTHROPIC_API_KEY` is passed only to the live step. The
+token is read-only, so the workflow cannot commit: to publish a scoreboard summary, download
+`evals-report-<run_id>` and commit its `<run_id>.summary.json` and `<run_id>.md` under
+`evals/scoreboard/` in a normal PR.
+
+**One-time setup (owner).** In the repository on GitHub:
+
+1. **Settings → Environments → New environment**, name it exactly `eval-live`.
+2. In `eval-live`, tick **Required reviewers** and add yourself (the owner). Optionally untick
+   "Allow administrators to bypass" and, under **Deployment branches and tags**, choose
+   **Selected branches and tags** and add `master`, so live runs only use reviewed code.
+3. In `eval-live`, under **Environment secrets**, add `ANTHROPIC_API_KEY` with your key. Do
+   not add it as a repository or organisation secret: an environment secret is released only
+   to jobs that the environment has approved.
+4. **Settings → Actions → General**: keep "Require approval for all outside collaborators"
+   (the default for forks) on, and leave the default `GITHUB_TOKEN` permission at read.
+
+To run: **Actions → evals-live → Run workflow**, pick the branch and inputs, then approve the
+pending deployment to `eval-live` when GitHub asks. Spend goes on the wave's line in
+`docs/STATUS.md` (plan §0.8).
+
 ## Unofficial runs through Claude Code (`--cli`, no key)
 
 `--cli` sends every generator and judge call through headless Claude Code (`claude -p`) on

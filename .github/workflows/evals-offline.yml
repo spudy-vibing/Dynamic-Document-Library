@@ -1,0 +1,74 @@
+# Offline eval job (WP-019; EVAL-7, EVAL-8, EVAL-14; EVALS_PROPOSAL §7.3 "Offline").
+# Runs on every PR and every push to the default branch. No key, no secrets, no network calls
+# to the model: every LLM call here goes to the deterministic FakeLLM.
+# The library's own suite is in ci.yml; the root conftest.py keeps the two suites apart, so
+# nothing here is run twice.
+name: evals-offline
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-offline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_FROZEN: "1"
+  # A small cross-family subset for the fake end-to-end smoke (one rep each).
+  SMOKE_CASES: w-calderwyn-5120 q-brightwell-2417 r-halcyx-sync-7781 i-larkspur-6347
+  SMOKE_GENERATORS: b0-oneshot b1-parallel b2-chain p1-frame p4-editor
+
+jobs:
+  offline:
+    name: offline evals (no key)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: evals/uv.lock
+
+      - name: Eval test suite (graders, perturbations, null baseline, schema, judges)
+        run: uv run --project evals pytest
+
+      - name: Import check (EVAL-8)
+        run: uv run --project evals python -m evals.checks.check_imports
+
+      - name: Dev cases regenerate from their seeds (EVAL-7)
+        run: uv run --project evals python -m evals.fixtures.make_cases --check
+
+      - name: Fake-mode smoke, run twice and compare (determinism)
+        run: |
+          read -ra cases <<<"$SMOKE_CASES"
+          read -ra gens <<<"$SMOKE_GENERATORS"
+          out="$RUNNER_TEMP/evals"
+          for id in fake-ci-a fake-ci-b; do
+            uv run --project evals python -m evals all \
+              --cases "${cases[@]}" --generators "${gens[@]}" --reps 1 --run-id "$id" \
+              --runs-dir "$out/runs" --scoreboard-dir "$out/scoreboard"
+          done
+          uv run --project evals python -m evals compare fake-ci-a fake-ci-b \
+            --fail-on-regression --runs-dir "$out/runs"
+
+      - name: Upload the smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evals-offline-smoke
+          path: |
+            ${{ runner.temp }}/evals/runs/fake-ci-a/report.md
+            ${{ runner.temp }}/evals/runs/fake-ci-b/compare_fake-ci-a.md
+            ${{ runner.temp }}/evals/scoreboard/
+          if-no-files-found: ignore
+          retention-days: 7
