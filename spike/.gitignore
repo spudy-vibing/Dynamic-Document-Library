@@ -1,0 +1,5 @@
+out/
+.venv/
+release-notes.*
+.pytest_cache/
+__pycache__/
