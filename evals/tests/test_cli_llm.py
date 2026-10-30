@@ -119,3 +119,10 @@ def test_cli_usage_error_fails_fast():
 def test_factory_picks_cli_backend():
     llm = runner.make_llm_factory(CONFIG, live=False, cli=True)()
     assert isinstance(llm, ClaudeCodeLLM)
+
+
+def test_usage_limit_fails_at_once():
+    llm, stub = make([api_fail(429, "You've hit your session limit · resets 1:40pm (America/New_York)")])
+    with pytest.raises(InfraError, match="session limit"):
+        complete(llm)
+    assert len(stub.calls) == 1

@@ -312,6 +312,9 @@ CLI_FLAGS = (
     "--setting-sources", "", "--strict-mcp-config", "--disable-slash-commands",
 )
 
+#: The subscription's usage-limit message (session or weekly limit); never retried.
+USAGE_LIMIT = re.compile(r"hit your (?:session|weekly|usage) limit|usage limit reached", re.I)
+
 CliRunner = Callable[[list[str], str, dict[str, str], str], Awaitable[tuple[int, str, str]]]
 
 
@@ -428,8 +431,13 @@ class ClaudeCodeLLM(_BaseLLM):
                                                               latency_ms=busy_ms, attempts=attempt)
             status = data.get("api_error_status")
             # timeouts, unreadable output and 429/529/5xx are retried; a CLI usage error or a
-            # failed login (non-zero exit, no API status) is not, so it fails fast
-            transient = reason != "" or status in TRANSIENT_STATUS or (isinstance(status, int) and status >= 500)
+            # failed login (non-zero exit, no API status) is not, so it fails fast. Neither is a
+            # subscription usage limit ("You've hit your session limit"): backing off for a minute
+            # cannot outlast a limit that resets in hours, so it fails at once and the run resumes later.
+            limit_hit = USAGE_LIMIT.search(str(data.get("result") or "")) is not None
+            transient = not limit_hit and (
+                reason != "" or status in TRANSIENT_STATUS or (isinstance(status, int) and status >= 500)
+            )
             if transient and attempt < self.max_attempts:
                 delay = min(MAX_BACKOFF_S, self.backoff_s * 2 ** (attempt - 1)) * (0.5 + random.random() / 2)
                 await self.sleep(delay)
