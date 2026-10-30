@@ -1,0 +1,92 @@
+{
+  "company": "Vellmora Outdoor",
+  "week": "2026-W37",
+  "week_number": 37,
+  "teams": [
+    {
+      "team": "Payments",
+      "lead": "Tomasz Okafor",
+      "done": [
+        "Shipped project Marlow to all customers",
+        "Shipped project Cobalt to all customers"
+      ],
+      "in_progress": [
+        "Data backfill for Kestrel is running"
+      ],
+      "blockers": [],
+      "next_week": [
+        "Start the Kestrel rollout"
+      ],
+      "metrics": {
+        "tickets_closed": 39,
+        "open_bugs": 42,
+        "deploys": 35,
+        "auth_success_pct": 98.61
+      }
+    },
+    {
+      "team": "Data",
+      "lead": "Lena Castellanos",
+      "done": [
+        "Shipped project Juniper to all customers",
+        "Retired the old Tamarind service"
+      ],
+      "in_progress": [
+        "Data backfill for Basalt is running"
+      ],
+      "blockers": [],
+      "next_week": [
+        "Hand Basalt over to support"
+      ],
+      "metrics": {
+        "tickets_closed": 54,
+        "open_bugs": 18,
+        "deploys": 24,
+        "pipeline_freshness_min": 82
+      }
+    },
+    {
+      "team": "Support",
+      "lead": "Ines Varga",
+      "done": [
+        "Shipped project Wren to all customers",
+        "Retired the old Lantern service"
+      ],
+      "in_progress": [
+        "Load testing for Quill is underway"
+      ],
+      "blockers": [
+        "Waiting on legal sign-off for Quill"
+      ],
+      "next_week": [
+        "Run the Quill load test"
+      ],
+      "metrics": {
+        "tickets_closed": 57,
+        "open_bugs": 19,
+        "deploys": 13,
+        "first_response_min": 138
+      }
+    }
+  ],
+  "team_metrics": [
+    {
+      "team": "Payments",
+      "tickets_closed": 39,
+      "open_bugs": 42,
+      "deploys": 35
+    },
+    {
+      "team": "Data",
+      "tickets_closed": 54,
+      "open_bugs": 18,
+      "deploys": 24
+    },
+    {
+      "team": "Support",
+      "tickets_closed": 57,
+      "open_bugs": 19,
+      "deploys": 13
+    }
+  ]
+}

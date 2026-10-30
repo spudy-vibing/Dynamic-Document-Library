@@ -1,0 +1,92 @@
+{
+  "company": "Quorvane Analytics",
+  "fiscal_year": "FY2025",
+  "currency": "USD",
+  "quarters": [
+    {
+      "quarter": "Q1 2025",
+      "revenue": 34900000,
+      "gross_margin_pct": 25.5,
+      "active_customers": 867,
+      "notes": [
+        "Support response times improved after the new triage rota.",
+        "A new head of sales started at the beginning of the quarter."
+      ]
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue": 37700000,
+      "gross_margin_pct": 26.9,
+      "active_customers": 961,
+      "notes": [
+        "The enterprise tier won three new logos in financial services.",
+        "A new head of sales started at the beginning of the quarter."
+      ]
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue": 40700000,
+      "gross_margin_pct": 26.7,
+      "active_customers": 1148,
+      "notes": [
+        "Two regional distributors renewed on multi-year terms.",
+        "Headcount was flat; two open roles in finance remain unfilled."
+      ]
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue": 42600000,
+      "gross_margin_pct": 27.8,
+      "active_customers": 1192,
+      "notes": [
+        "The partner channel signed its first reseller in the Nordics.",
+        "The ERP migration is on schedule for completion next quarter."
+      ]
+    }
+  ],
+  "kpis": [
+    {
+      "quarter": "Q1 2025",
+      "revenue_usd": 34900000,
+      "gross_margin_pct": 25.5,
+      "active_customers": 867
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue_usd": 37700000,
+      "gross_margin_pct": 26.9,
+      "active_customers": 961
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue_usd": 40700000,
+      "gross_margin_pct": 26.7,
+      "active_customers": 1148
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue_usd": 42600000,
+      "gross_margin_pct": 27.8,
+      "active_customers": 1192
+    }
+  ],
+  "prior_year": {
+    "fiscal_year": "FY2024",
+    "revenue": 139900000
+  },
+  "metrics": {
+    "revenue_q1": 34900000,
+    "gross_margin_q1_pct": 25.5,
+    "active_customers_q1": 867,
+    "revenue_q2": 37700000,
+    "gross_margin_q2_pct": 26.9,
+    "active_customers_q2": 961,
+    "revenue_q3": 40700000,
+    "gross_margin_q3_pct": 26.7,
+    "active_customers_q3": 1148,
+    "revenue_q4": 42600000,
+    "gross_margin_q4_pct": 27.8,
+    "active_customers_q4": 1192,
+    "revenue_fy_prior": 139900000
+  }
+}

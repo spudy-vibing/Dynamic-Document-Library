@@ -1,0 +1,80 @@
+{
+  "values": {
+    "cold_start_before_ms": 847,
+    "cold_start_after_ms": 709,
+    "sync_time_before_ms": 3232,
+    "sync_time_after_ms": 2309,
+    "peak_memory_before_mb": 175,
+    "peak_memory_after_mb": 141,
+    "merged_prs": 89,
+    "contributors": 13,
+    "python_floor_old": 3.9,
+    "python_floor_new": 3.11
+  },
+  "labels": {
+    "cold_start_before_ms": [
+      "cold start"
+    ],
+    "cold_start_after_ms": [
+      "cold start"
+    ],
+    "sync_time_before_ms": [
+      "sync"
+    ],
+    "sync_time_after_ms": [
+      "sync"
+    ],
+    "peak_memory_before_mb": [
+      "peak memory",
+      "memory"
+    ],
+    "peak_memory_after_mb": [
+      "peak memory",
+      "memory"
+    ],
+    "merged_prs": [
+      "pull requests",
+      "PRs",
+      "merged"
+    ],
+    "contributors": [
+      "contributors"
+    ],
+    "python_floor_old": [
+      "Python"
+    ],
+    "python_floor_new": [
+      "Python"
+    ]
+  },
+  "derived": {
+    "cold_start_improvement_ms": {
+      "value": 138,
+      "formula": "cold_start_before_ms - cold_start_after_ms"
+    },
+    "sync_time_improvement_ms": {
+      "value": 923,
+      "formula": "sync_time_before_ms - sync_time_after_ms"
+    },
+    "cold_start_improvement_pct": {
+      "value": 16.3,
+      "formula": "(1 - cold_start_after_ms / cold_start_before_ms) * 100"
+    },
+    "sync_time_improvement_pct": {
+      "value": 28.6,
+      "formula": "(1 - sync_time_after_ms / sync_time_before_ms) * 100"
+    },
+    "peak_memory_improvement_mb": {
+      "value": 34,
+      "formula": "peak_memory_before_mb - peak_memory_after_mb"
+    }
+  },
+  "facts": {
+    "package": "tesselate-sync",
+    "version": "1.5.0",
+    "previous_version": "1.4.5",
+    "python_floor": ">=3.11",
+    "dropped_python": "3.9",
+    "features": "Parallel checksums, Config profiles, Resumable uploads, Progress bar"
+  }
+}

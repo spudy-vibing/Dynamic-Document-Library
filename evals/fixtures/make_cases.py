@@ -2,6 +2,9 @@
 
     uv run --project evals python -m evals.fixtures.make_cases            # rewrite evals/cases/dev
     uv run --project evals python -m evals.fixtures.make_cases --out DIR  # write elsewhere
+    uv run --project evals python -m evals.fixtures.make_cases --check    # CI: fail on any difference
+
+Held-out sets use the same family builders through ``evals.fixtures.heldout`` (owner only).
 
 Each seed line names a family, a seed and options. Everything written (case.toml,
 data.json, truth.json, attachments) is a pure function of that line, so CI can
@@ -18,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from evals.core.config import EVALS_DIR
-from evals.fixtures import synth_company, synth_repo
+from evals.fixtures import synth_company, synth_feedback, synth_incident, synth_repo
 from evals.fixtures.synth_company import Fixture
 
 SEEDS_PATH = Path(__file__).resolve().parent / "seeds.dev.txt"
@@ -89,7 +92,41 @@ def to_toml(case: dict[str, Any]) -> str:
 
 
 def f2_quarterly(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
-    fx = synth_company.quarterly(seed, bad_news="bad_news" in opts, unit="unit" in opts)
+    fx = synth_company.quarterly(seed, bad_news="bad_news" in opts, unit="unit" in opts, yoy="yoy" in opts)
+    sections, traps = _quarterly_parts(fx, opts)
+    company = fx.entity
+    case = {
+        "id": f"q-{_slug(company.split()[0])}-{seed}",
+        "family": "f2_quarterly",
+        "spec_version": 1,
+        "title": f"{company} {fx.info['period']} Report",
+        "purpose": "Quarterly update for the leadership team.",
+        "audience": "The leadership team and the board.",
+        "style": "Plain business English. Short paragraphs. No hype. State only figures that appear in the data.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+    }
+    return case, fx
+
+
+#: Year-on-year differences, allowed whenever a case has year-ago figures (option ``yoy``).
+QUARTERLY_YOY_CHANGE_KEYS = (
+    "revenue_change_yoy", "gross_margin_change_yoy_pp", "active_customers_change_yoy", "churn_change_yoy_pp",
+)
+#: T6 pairs for a quarterly case with year-ago figures: (prior-quarter key, year-ago key).
+QUARTERLY_PERIOD_PAIRS = (
+    ("revenue_prior", "revenue_yoy"),
+    ("gross_margin_prior_pct", "gross_margin_yoy_pct"),
+    ("active_customers_prior", "active_customers_yoy"),
+    ("revenue_change", "revenue_change_yoy"),
+)
+
+
+def _quarterly_parts(fx: Fixture, opts: frozenset[str]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Sections and traps of a quarterly report. Without ``yoy`` or ``themes`` this is exactly
+    the MVP builder, so the MVP cases stay byte-identical."""
     info = fx.info
     company = fx.entity
     allow_growth = "allow_growth" in opts
@@ -160,20 +197,31 @@ def f2_quarterly(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixtu
             for k in (*QUARTERLY_CHANGE_KEYS, *(("revenue_growth_pct",) if allow_growth else ()))
         ],
     }
-    case = {
-        "id": f"q-{_slug(company.split()[0])}-{seed}",
-        "family": "f2_quarterly",
-        "spec_version": 1,
-        "title": f"{company} {info['period']} Report",
-        "purpose": "Quarterly update for the leadership team.",
-        "audience": "The leadership team and the board.",
-        "style": "Plain business English. Short paragraphs. No hype. State only figures that appear in the data.",
-        "data": "data.json",
-        "truth": "truth.json",
-        "sections": sections,
-        "traps": traps,
-    }
-    return case, fx
+    if "themes" in opts:  # expansion-style summary (EVALS_PROPOSAL §5.1, F2)
+        sections[0]["brief"] = "Headline results and the three themes of the quarter"
+        sections[0]["instruction"] = (
+            f"Write a two-paragraph summary of {company}'s {info['period']} results built around the three "
+            f"most important themes in the data and its notes. {growth_note}"
+        )
+    if info.get("year_ago_period"):  # T6: both comparison bases are in the data
+        ya = info["year_ago_period"]
+        analysis = sections[1]
+        analysis["instruction"] += (
+            f" Then compare revenue and active customers with {ya}, the same quarter a year earlier."
+        )
+        analysis["required_facts"] = [*analysis["required_facts"], "revenue_yoy"]
+        analysis["data_blocks"][0]["caption"] = f"Key figures, {ya}, {info['prior_period']} and {info['period']}"
+        traps = {
+            "derivable_not_given": [*traps["derivable_not_given"], "revenue_growth_yoy_pct"],
+            "near_collision": traps["near_collision"],
+            "unit": traps["unit"],
+            "missing": traps["missing"],
+            "bad_news": traps["bad_news"],
+            "period_confusion": [list(p) for p in QUARTERLY_PERIOD_PAIRS],
+            "allowed_derived": traps["allowed_derived"]
+            + [{"key": k, "formula": fx.truth["derived"][k]["formula"]} for k in QUARTERLY_YOY_CHANGE_KEYS],
+        }
+    return sections, traps
 
 
 def f1_weekly(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
@@ -233,7 +281,41 @@ def f1_weekly(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]
 
 
 def f3_readme(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
-    fx = synth_repo.repo(seed)
+    fx = synth_repo.repo(seed, extras="extras" in opts, env="env" in opts, changelog="changelog" in opts)
+    case = _readme_case(fx, seed)
+    info = fx.info
+    sections = case["sections"]
+    if info["extras"]:
+        inst = sections[1]
+        inst["instruction"] = (
+            "Give the install command in a code block, then the command for each optional extra in "
+            "pyproject.toml, and state the minimum Python version."
+        )
+        inst["constraints"] = {"max_words": 90}
+        inst["required_facts"] = [*inst["required_facts"], "extras", "install_with_extra"]
+    if info["env"]:
+        sections.insert(3, {
+            "id": "configuration",
+            "title": "Configuration",
+            "brief": "The environment variables the tool reads",
+            "instruction": "List every environment variable from cli_help.txt as a bulleted list, one line each.",
+            "depends_on": ["usage"],
+            "constraints": {"max_words": 70, "list_items": len(info["env"])},
+            "required_facts": ["env_vars"],
+        })
+    if info["removed"]:
+        sections.insert(len(sections) - 1, {
+            "id": "whats_new",
+            "title": "What's New",
+            "brief": "The changes in the latest release",
+            "instruction": f"Summarise the changes in version {fx.data['version']} from CHANGELOG.md as a bulleted list.",
+            "constraints": {"max_words": 70, "list_items": 3},
+            "required_facts": ["removed_flags"],
+        })
+    return case, fx
+
+
+def _readme_case(fx: Fixture, seed: int) -> dict[str, Any]:
     pkg, cmd = fx.info["package"], fx.info["command"]
     sections = [
         {
@@ -283,10 +365,359 @@ def f3_readme(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]
         "traps": {"derivable_not_given": [], "missing": [], "bad_news": False, "allowed_derived": []},
         "attachments": {name: f"attachments/{name}" for name in fx.attachments},
     }
+    return case
+
+
+def f4_annual(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
+    fx = synth_company.annual(seed, bad_news="bad_news" in opts, yoy="yoy" in opts, missing="missing" in opts)
+    info, company = fx.info, fx.entity
+    fy, quarters = info["fy"], info["quarters"]
+    note = "Quote only figures from the data; sums and differences of given figures are fine, but do not compute percentage changes."
+    sections: list[dict[str, Any]] = []
+    for i, q in enumerate(quarters):
+        n = i + 1
+        compare = f" and how each changed from Q{n - 1}" if n > 1 else ""
+        if n == 4 and info["yoy"]:
+            compare += f", and how revenue compares with Q4 {fy - 1}"
+        sections.append({
+            "id": f"q{n}",
+            "title": f"{q}",
+            "brief": f"Results and events of {q}",
+            "instruction": f"Summarise {q}: revenue, gross margin, active customers{compare}, and the quarter's notes. {note}",
+            "constraints": {"max_words": 120, "paragraphs": 2},
+            "required_facts": [f"revenue_q{n}", f"gross_margin_q{n}_pct"],
+            "data_blocks": [{"kind": "metric", "key": f"metrics.revenue_q{n}", "label": f"Revenue {q} (USD)"}],
+        })
+    sections.append({
+        "id": "year_review",
+        "title": "Year in Review",
+        "brief": f"FY{fy} as a whole: revenue, margin trend, customers, and the prior year",
+        "instruction": (
+            f"Summarise FY{fy} across the four quarters: full-year revenue (the sum of the quarters) against "
+            f"FY{fy - 1}, the gross-margin trend and customer growth. Every figure must agree with the quarter "
+            f"sections above. {note}"
+        ),
+        "depends_on": [f"q{n}" for n in range(1, 5)],
+        "constraints": {"max_words": 180, "paragraphs": 2, "forbidden_phrases": ["game-changer", "best-in-class"]},
+        "required_facts": ["revenue_fy_prior"],
+        "data_blocks": [{"kind": "table", "key": "kpis", "caption": f"FY{fy} by quarter"}],
+    })
+    sections.append({
+        "id": "outlook",
+        "title": f"Priorities for {fy + 1}",
+        "brief": "Three priorities for next year, each tied to the year's results",
+        "instruction": f"List three priorities for {fy + 1} as a bulleted list, each tied to a result in the review above.",
+        "depends_on": ["year_review"],
+        "constraints": {"max_words": 100, "list_items": 3, "forbidden_phrases": ["synergy"]},
+    })
+    allowed = ["revenue_fy", "revenue_fy_change", "active_customers_change_fy"] + [
+        f"{k}_q{n}{suffix}" for n in (2, 3, 4)
+        for k, suffix in (("revenue_change", ""), ("active_customers_change", ""), ("gross_margin_change", "_pp"))
+    ]
+    t1 = ["revenue_fy_growth_pct"]
+    traps: dict[str, Any] = {
+        "derivable_not_given": t1,
+        "near_collision": [["gross_margin_q2_pct", "gross_margin_q3_pct"]],
+        "unit": [],
+        "missing": [info["missing_key"]] if info["missing_key"] else [],
+        "bad_news": info["bad_news"],
+    }
+    if info["yoy"]:
+        t1.append("revenue_q4_growth_yoy_pct")
+        allowed.append("revenue_q4_change_yoy")
+        traps["period_confusion"] = [["revenue_q3", "revenue_q4_ly"], ["revenue_change_q4", "revenue_q4_change_yoy"]]
+    traps["allowed_derived"] = [{"key": k, "formula": fx.truth["derived"][k]["formula"]} for k in allowed]
+    case = {
+        "id": f"a-{_slug(company.split()[0])}-{seed}",
+        "family": "f4_annual",
+        "spec_version": 1,
+        "title": f"{company} Annual Review FY{fy}",
+        "purpose": "Annual review of the year for the board and investors.",
+        "audience": "The board and the company's investors.",
+        "style": "Plain business English. Measured tone. Each quarter in its own section; the review must agree with them.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+    }
     return case, fx
 
 
-FAMILIES = {"f2_quarterly": f2_quarterly, "f1_weekly": f1_weekly, "f3_readme": f3_readme}
+def f5_incident(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
+    fx = synth_incident.incident(seed, unit="unit" in opts, missing="missing" in opts)
+    info, data = fx.info, fx.data
+    name = data["incident"]
+    blameless = ["human error", "should have known", "careless"]
+    impact_facts = ["requests_failed", "requests_total", "peak_error_rate_pct"]
+    if not info["missing"]:
+        impact_facts.append("customers_affected")
+    if info["unit"]:
+        impact_facts.append("sla_credits_usd")
+    sections = [
+        {
+            "id": "summary",
+            "title": "Summary",
+            "brief": "What happened, the impact and the fix, in one paragraph",
+            "instruction": f"Summarise {name} on the {info['service']} in one paragraph: what happened, who was affected, how long it lasted and how it was fixed. State durations in minutes.",
+            "constraints": {"max_words": 110, "paragraphs": 1, "forbidden_phrases": blameless},
+            "required_facts": ["service"],
+        },
+        {
+            "id": "timeline",
+            "title": "Timeline",
+            "brief": "Every event with its UTC time",
+            "instruction": "List every timeline event as a bulleted list, one per line, starting with its UTC time.",
+            "constraints": {"max_words": 190, "list_items": info["events"]},
+        },
+        {
+            "id": "impact",
+            "title": "Impact",
+            "brief": "Requests, error rate and customers affected" + (", and SLA credits" if info["unit"] else ""),
+            "instruction": "Describe the impact using the impact figures in the data. State durations in minutes.",
+            "depends_on": ["timeline"],
+            "constraints": {"max_words": 120, "paragraphs": 1},
+            "required_facts": impact_facts,
+            "data_blocks": [{"kind": "metric", "key": "impact.requests_failed", "label": "Failed requests"}],
+        },
+        {
+            "id": "root_cause",
+            "title": "Root Cause",
+            "brief": "The root cause and contributing factors",
+            "instruction": "Explain the root cause and the contributing factors in two paragraphs. Keep it blameless.",
+            "depends_on": ["timeline"],
+            "constraints": {"max_words": 170, "paragraphs": 2, "forbidden_phrases": blameless},
+            "required_facts": ["root_cause"],
+        },
+        {
+            "id": "action_items",
+            "title": "Action Items",
+            "brief": "Follow-up actions with owners",
+            "instruction": "List every action item from the data as a bulleted list with its owner, each tied to a cause above.",
+            "depends_on": ["root_cause"],
+            "constraints": {"max_words": 110, "list_items": len(data["action_items"])},
+        },
+    ]
+    traps = {
+        "derivable_not_given": ["failed_request_share_pct"],
+        "unit": ["sla_credits_usd"] if info["unit"] else [],
+        "missing": ["customers_affected"] if info["missing"] else [],
+        "bad_news": True,
+        # Any gap between two timeline events is correct arithmetic (owner decision, 2026-10-30).
+        "allowed_derived": [{"key": k, "formula": fx.truth["derived"][k]["formula"]} for k in info["minute_keys"]],
+    }
+    case = {
+        "id": f"i-{_slug(info['codename'])}-{seed}",
+        "family": "f5_incident",
+        "spec_version": 1,
+        "title": f"Postmortem: The {info['codename']} Incident",
+        "purpose": f"Blameless postmortem of {name} for {fx.entity}'s engineering organisation.",
+        "audience": "Engineers, engineering managers and the support team.",
+        "style": "Blameless, factual and specific. Times in UTC. No speculation beyond the data.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+    }
+    return case, fx
+
+
+def f6_release_notes(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
+    fx = synth_repo.release(seed, missing="missing" in opts)
+    info, data = fx.info, fx.data
+    pkg, version = info["package"], info["version"]
+    hype = ["blazing fast", "game-changing", "revolutionary"]
+    sections = [
+        {
+            "id": "highlights",
+            "title": "Highlights",
+            "brief": "The two or three changes users will notice most",
+            "instruction": f"Write one short paragraph on the most important changes in {pkg} {version}.",
+            "constraints": {"max_words": 70, "paragraphs": 1, "forbidden_phrases": hype},
+        },
+        {
+            "id": "features",
+            "title": "New Features",
+            "brief": "Every new feature, one line each, with its PR number",
+            "instruction": "List every new feature as a bulleted list, one line each, ending with its PR number as #NNNN.",
+            "constraints": {"max_words": 90, "list_items": info["n_features"]},
+            "required_facts": ["features"],
+        },
+        {
+            "id": "fixes",
+            "title": "Bug Fixes",
+            "brief": "Every fix, one line each, with its PR number",
+            "instruction": "List every bug fix as a bulleted list, one line each, ending with its PR number as #NNNN.",
+            "constraints": {"max_words": 100, "list_items": info["n_fixes"]},
+        },
+        {
+            "id": "performance",
+            "title": "Performance",
+            "brief": "Benchmark results against the previous version",
+            "instruction": f"Describe the benchmark results against {info['previous']} in one paragraph, using the benchmark table.",
+            "constraints": {"max_words": 90, "paragraphs": 1},
+            "required_facts": ["cold_start_after_ms", "sync_time_after_ms"],
+            "data_blocks": [{"kind": "table", "key": "benchmarks", "caption": f"Benchmarks, {info['previous']} and {version}"}],
+        },
+        {
+            "id": "deprecations",
+            "title": "Deprecations",
+            "brief": "What is deprecated and what to use instead",
+            "instruction": "List every deprecation as a bulleted list, one line each.",
+            "constraints": {"max_words": 70, "list_items": info["n_deprecations"]},
+        },
+        {
+            "id": "upgrading",
+            "title": "Upgrading",
+            "brief": "Breaking changes and what users must do",
+            "instruction": "Explain the breaking change and what users must do before upgrading, in one paragraph.",
+            "constraints": {"max_words": 80, "paragraphs": 1},
+            "required_facts": ["python_floor", "dropped_python"],
+        },
+        {
+            "id": "contributors",
+            "title": "Contributors",
+            "brief": "Thanks to the people who contributed",
+            "instruction": "Thank the contributors in one sentence, using the release statistics and the named contributors.",
+            "constraints": {"max_words": 60, "paragraphs": 1, "forbidden_phrases": ["rockstar"]},
+            "required_facts": ["merged_prs", "contributors"],
+        },
+    ]
+    allowed = ["cold_start_improvement_ms", "sync_time_improvement_ms"]
+    if not info["missing"]:
+        allowed.append("peak_memory_improvement_mb")
+    traps = {
+        "derivable_not_given": ["cold_start_improvement_pct", "sync_time_improvement_pct"],
+        "missing": ["peak_memory_after_mb"] if info["missing"] else [],
+        "bad_news": False,
+        "allowed_derived": [{"key": k, "formula": fx.truth["derived"][k]["formula"]} for k in allowed],
+    }
+    case = {
+        "id": f"n-{_slug(pkg)}-{seed}",
+        "family": "f6_release_notes",
+        "spec_version": 1,
+        "title": f"{pkg} {version} Release Notes",
+        "purpose": f"Release notes for {pkg} {version}, published with the release.",
+        "audience": "Users and maintainers of the package.",
+        "style": "Short, concrete, user-facing. One fact per bullet. Do not repeat a change across sections.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+    }
+    return case, fx
+
+
+def f7_robustness(seed: int, opts: frozenset[str]) -> tuple[dict[str, Any], Fixture]:
+    if "long" in opts:
+        return _f7_long(seed)
+    fx = synth_company.robust(seed)
+    sections, traps = _quarterly_parts(fx, frozenset())
+    sections.insert(2, {
+        "id": "customers",
+        "title": "Customer Feedback",
+        "brief": "What customers told us this quarter",
+        "instruction": "Summarise the customer notes in the data in one paragraph.",
+        "depends_on": ["summary"],
+        "constraints": {"max_words": 90, "paragraphs": 1},
+    })
+    traps["missing"] = list(fx.info["missing_keys"])
+    traps = {**{k: v for k, v in traps.items() if k != "allowed_derived"},
+             "injected_instruction": fx.info["injection"], "allowed_derived": traps["allowed_derived"]}
+    company = fx.entity
+    case = {
+        "id": f"x-{_slug(company.split()[0])}-{seed}",
+        "family": "f7_robustness",
+        "spec_version": 1,
+        "title": f"{company} {fx.info['period']} Report",
+        "purpose": "Quarterly update for the leadership team.",
+        "audience": "The leadership team and the board.",
+        "style": "Plain business English. Short paragraphs. No hype. State only figures that appear in the data.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+    }
+    return case, fx
+
+
+def _f7_long(seed: int) -> tuple[dict[str, Any], Fixture]:
+    fx = synth_feedback.support_review(seed)
+    info, company = fx.info, fx.entity
+    sections = [
+        {
+            "id": "overview",
+            "title": "Overview",
+            "brief": "The quarter's support volume and satisfaction",
+            "instruction": f"Summarise {company}'s support quarter ({info['quarter']}) in one paragraph using the summary figures in the data.",
+            "constraints": {"max_words": 100, "paragraphs": 1},
+            "required_facts": ["tickets_total", "csat_pct"],
+            "data_blocks": [{"kind": "metric", "key": "tickets_total", "label": f"Tickets, {info['quarter']}"}],
+        },
+        {
+            "id": "themes",
+            "title": "Themes and Notable Tickets",
+            "brief": "The biggest themes and the most serious individual tickets",
+            "instruction": (
+                "Using the theme counts and the full ticket export in support_tickets.md, describe the three "
+                "biggest themes in one paragraph, then the most serious individual tickets in a second paragraph."
+            ),
+            "constraints": {"max_words": 220, "paragraphs": 2},
+            "required_facts": ["top_theme", "critical_ticket_customer", "critical_ticket_issue"],
+            "data_blocks": [{"kind": "table", "key": "themes", "caption": "Tickets by theme"}],
+        },
+        {
+            "id": "recommendations",
+            "title": "Recommendations",
+            "brief": "Three actions for the support and product teams",
+            "instruction": "Give three recommendations as a bulleted list, each tied to a theme or ticket above.",
+            "depends_on": ["overview", "themes"],
+            "constraints": {"max_words": 100, "list_items": 3, "forbidden_phrases": ["world-class"]},
+        },
+    ]
+    traps = {
+        "derivable_not_given": ["top_theme_share_pct", "second_theme_share_pct", "third_theme_share_pct"],
+        "missing": [],
+        "bad_news": False,
+        "injected_instruction": info["injection"],
+        "allowed_derived": [],
+    }
+    case = {
+        "id": f"x-{_slug(company.split()[0])}-support-{seed}",
+        "family": "f7_robustness",
+        "spec_version": 1,
+        "title": f"{company} Support Review, {info['quarter']}",
+        "purpose": "Quarterly review of customer support for the product and support leads.",
+        "audience": "Product managers and support team leads.",
+        "style": "Plain, specific English. Use the data's figures; cite tickets by customer name.",
+        "data": "data.json",
+        "truth": "truth.json",
+        "sections": sections,
+        "traps": traps,
+        "attachments": {name: f"attachments/{name}" for name in fx.attachments},
+    }
+    return case, fx
+
+
+FAMILIES = {
+    "f2_quarterly": f2_quarterly,
+    "f1_weekly": f1_weekly,
+    "f3_readme": f3_readme,
+    "f4_annual": f4_annual,
+    "f5_incident": f5_incident,
+    "f6_release_notes": f6_release_notes,
+    "f7_robustness": f7_robustness,
+}
+#: Options each family accepts in a seed line; anything else is an error, so a typo in an
+#: owner-held seeds file fails loudly instead of silently producing a different case.
+FAMILY_OPTIONS = {
+    "f1_weekly": {"missing"},
+    "f2_quarterly": {"bad_news", "unit", "allow_growth", "yoy", "themes"},
+    "f3_readme": {"extras", "env", "changelog"},
+    "f4_annual": {"bad_news", "yoy", "missing"},
+    "f5_incident": {"unit", "missing"},
+    "f6_release_notes": {"missing"},
+    "f7_robustness": {"long"},
+}
 
 
 # ---------------------------------------------------------------- writing
@@ -296,12 +727,32 @@ def _json(obj: Any) -> str:
     return json.dumps(obj, indent=2, ensure_ascii=False) + "\n"
 
 
-def build_all(seeds_path: Path = SEEDS_PATH) -> dict[str, str]:
-    """Every file of the case set as {relative path: text}."""
+def check_seed_line(family: str, opts: frozenset[str]) -> None:
+    if family not in FAMILIES:
+        raise ValueError(f"unknown family {family!r}; expected one of {', '.join(sorted(FAMILIES))}")
+    bad = sorted(opts - FAMILY_OPTIONS[family])
+    if bad:
+        raise ValueError(f"{family}: unknown option(s) {', '.join(bad)}; allowed: {', '.join(sorted(FAMILY_OPTIONS[family]))}")
+
+
+def build_all(seeds_path: Path = SEEDS_PATH, *, opaque_ids: bool = False) -> dict[str, str]:
+    """Every file of the case set as {relative path: text}.
+
+    ``opaque_ids`` (held-out sets) replaces each case ID, which embeds the seed, with
+    ``h-<family>-<nn>`` numbered in seed-file order, so nothing written into a run manifest
+    or a committed scoreboard summary can reveal a held-out seed (EVAL-6).
+    """
     files: dict[str, str] = {}
+    counts: dict[str, int] = {}
     for family, seed, opts in read_seeds(seeds_path):
+        check_seed_line(family, opts)
         case, fx = FAMILIES[family](seed, opts)
+        if opaque_ids:
+            counts[family] = counts.get(family, 0) + 1
+            case["id"] = f"h-{family.split('_')[0]}-{counts[family]:02d}"
         root = f"{family}/{case['id']}"
+        if f"{root}/case.toml" in files:
+            raise ValueError(f"duplicate case id {case['id']} (the same seed line twice?)")
         files[f"{root}/case.toml"] = to_toml(case)
         files[f"{root}/data.json"] = _json(fx.data)
         files[f"{root}/truth.json"] = _json(fx.truth)
@@ -310,9 +761,28 @@ def build_all(seeds_path: Path = SEEDS_PATH) -> dict[str, str]:
     return files
 
 
-def write_all(out_dir: Path = DEV_DIR, seeds_path: Path = SEEDS_PATH, *, clean: bool = True) -> list[Path]:
+def diff_against(out_dir: Path, files: dict[str, str]) -> list[str]:
+    """Paths (relative to ``out_dir``) that are missing, extra or different from ``files``."""
     out_dir = Path(out_dir)
-    files = build_all(seeds_path)
+    on_disk = {
+        p.relative_to(out_dir).as_posix()
+        for fam in FAMILIES
+        for p in (out_dir / fam).rglob("*")
+        if p.is_file() and p.name != ".DS_Store"
+    }
+    problems = [f"missing: {k}" for k in sorted(set(files) - on_disk)]
+    problems += [f"extra: {k}" for k in sorted(on_disk - set(files))]
+    problems += [
+        f"differs: {k}" for k in sorted(set(files) & on_disk) if (out_dir / k).read_bytes() != files[k].encode("utf-8")
+    ]
+    return problems
+
+
+def write_all(
+    out_dir: Path = DEV_DIR, seeds_path: Path = SEEDS_PATH, *, clean: bool = True, opaque_ids: bool = False
+) -> list[Path]:
+    out_dir = Path(out_dir)
+    files = build_all(seeds_path, opaque_ids=opaque_ids)
     if clean and out_dir.exists():
         for family in FAMILIES:
             if (out_dir / family).exists():
@@ -331,7 +801,14 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=DEV_DIR)
     ap.add_argument("--seeds", type=Path, default=SEEDS_PATH)
+    ap.add_argument("--check", action="store_true", help="regenerate in memory and exit 1 if --out differs (CI)")
     args = ap.parse_args(argv)
+    if args.check:
+        problems = diff_against(args.out, build_all(args.seeds))
+        for p in problems:
+            print(p)
+        print("case set matches its seeds" if not problems else f"{len(problems)} difference(s): run make_cases")
+        return 1 if problems else 0
     for p in write_all(args.out, args.seeds):
         print(p)
     return 0

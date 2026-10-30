@@ -19,11 +19,15 @@ def cases():
     return load_case_set("dev")
 
 
-def test_six_mvp_cases_load_and_validate(cases):
-    assert len(cases) == 6
-    families = sorted(c.family for c in cases)
-    assert families == ["f1_weekly", "f1_weekly", "f2_quarterly", "f2_quarterly", "f2_quarterly", "f3_readme"]
-    assert len({c.id for c in cases}) == 6
+MVP_IDS = {"q-halcyra-1903", "q-brightwell-2417", "q-calderwyn-3851", "w-calderwyn-5120", "w-vellmora-5233", "r-halcyx-sync-7781"}
+FAMILY_COUNTS = {"f1_weekly": 4, "f2_quarterly": 6, "f3_readme": 4, "f4_annual": 3, "f5_incident": 3, "f6_release_notes": 2, "f7_robustness": 2}
+
+
+def test_eval_6_dev_set_24_cases_over_7_families(cases):
+    assert len(cases) == 24
+    assert {f: sum(1 for c in cases if c.family == f) for f in FAMILY_COUNTS} == FAMILY_COUNTS
+    assert len({c.id for c in cases}) == 24
+    assert MVP_IDS <= {c.id for c in cases}
     for c in cases:
         assert c.path.name == c.id and c.path.parent.name == c.family
         for s in c.sections:
@@ -140,8 +144,9 @@ def test_weekly_fans_in_and_attachments_match_data(cases):
             assert f"{team['metrics']['tickets_closed']} tickets closed" in note
 
 
-def test_readme_facts_match_attachments(cases):
-    (c,) = [c for c in cases if c.family == "f3_readme"]
+@pytest.mark.parametrize("case_id", sorted(["r-halcyx-sync-7781", "r-quorvane-pack-7893", "r-ostrelix-pack-7922", "r-tesselate-sync-8056"]))
+def test_readme_facts_match_attachments(cases, case_id):
+    c = next(c for c in cases if c.id == case_id)
     facts = c.truth["facts"]
     py = c.attachments["pyproject.toml"]
     assert f'name = "{c.data["package"]}"' in py

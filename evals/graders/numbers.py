@@ -35,6 +35,9 @@ Metrics (model text only):
                      from the key's value appears in a sentence naming the key
   trap.t4_missing    per missing key: triggered if an unsupported figure appears in a sentence naming the key
   trap.t5_spin       bad-news cases: 1 if positive-spin wording appears (heuristic; detail.heuristic = true)
+  trap.t6_period     per ``traps.period_confusion`` pair (prior-quarter key, year-ago key): triggered if a
+                     figure equal to one base is stated with the other base's period label as its
+                     nearest period label in the sentence (truth "periods" / "period_of"; heuristic)
 Trap metrics are num = triggered, den = opportunities, and are emitted only when den > 0.
 """
 
@@ -254,7 +257,7 @@ def _pow10_off(m: Mention, v: float, tol: float) -> bool:
 
 class NumbersGrader:
     name = "numbers"
-    version = "1"
+    version = "2"  # 2: T6 period confusion (WP-016)
 
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         self.tol = float(grading_config(config)["number_tolerance"])
@@ -373,5 +376,76 @@ class NumbersGrader:
             ]
             hit = 1.0 if found else 0.0
             out.append(Score("trap.t5_spin", hit, hit, 1.0, {"heuristic": True, "hits": found}))
+
+        # T6: a comparison-base figure attributed to the other base (period confusion).
+        if traps.period_confusion:
+            out += self._t6(case, per_section)
         return out
+
+    def _t6(self, case: EvalCase, per_section: list[tuple[str, str, list[Mention]]]) -> list[Score]:
+        """Per (prior-base key, year-ago key) pair: triggered if a figure equal to one base's
+        value is stated with the *other* base's period label as its nearest period label in the
+        same sentence ("up from $45.1M in Q2 2025" when 45.1M is the Q1 2026 figure). A
+        sentence that names neither period is not judged. Heuristic; the claim checker owns
+        the full T6 judgement (EVALS_PROPOSAL §6.1)."""
+        truth = case.truth
+        periods = truth.get("periods", {})
+        period_of = truth.get("period_of", {})
+        rx = {p: _label_rx(list(labels)) for p, labels in periods.items()}
+
+        def value(key: str) -> float | None:
+            v = truth.get("values", {}).get(key)
+            if v is None:
+                v = truth.get("derived", {}).get(key, {}).get("value")
+            return None if v is None or isinstance(v, bool) else float(v)
+
+        pairs = []
+        for a, b in case.traps.period_confusion:
+            pa, pb, va, vb = period_of.get(a), period_of.get(b), value(a), value(b)
+            if pa and pb and pa != pb and va is not None and vb is not None and rx.get(pa) and rx.get(pb):
+                pairs.append((a, b, pa, pb, va, vb))
+        if not pairs:
+            return []
+
+        hits: dict[str, list[dict[str, Any]]] = {}
+        for a, b, pa, pb, va, vb in pairs:
+            found = []
+            for sid, text, ms in per_section:
+                for s0, s1 in sentence_spans(text):
+                    spans = {p: [(m.start(), m.end()) for m in rx[p].finditer(text, s0, s1)] for p in (pa, pb)}
+                    if not spans[pa] and not spans[pb]:
+                        continue
+                    for m in ms:
+                        if not s0 <= m.start < s1:
+                            continue
+                        owner = (
+                            pa if any(close(c, va, self.tol) for c in m.candidates())
+                            else pb if any(close(c, vb, self.tol) for c in m.candidates())
+                            else None
+                        )
+                        if owner is None:
+                            continue
+                        nearest = _nearest_period(m, spans)
+                        if nearest is not None and nearest != owner:
+                            found.append({"section": sid, "raw": m.raw, "is": owner, "labelled_as": nearest,
+                                          "sentence": text[s0:s1].strip()})
+            if found:
+                hits[f"{a}|{b}"] = found
+        n = len(pairs)
+        return [Score("trap.t6_period", len(hits) / n, len(hits), n, {"heuristic": True, "hits": hits})]
+
+
+def _nearest_period(m: Mention, spans: dict[str, list[tuple[int, int]]]) -> str | None:
+    """The period whose label is closest to the mention (characters between them); None on a tie."""
+    best: dict[str, int] = {}
+    for p, ss in spans.items():
+        for s, e in ss:
+            d = 0 if s < m.end and m.start < e else (s - m.end if s >= m.end else m.start - e)
+            best[p] = min(best.get(p, d), d)
+    if not best:
+        return None
+    ranked = sorted(best.items(), key=lambda kv: kv[1])
+    if len(ranked) > 1 and ranked[0][1] == ranked[1][1]:
+        return None
+    return ranked[0][0]
 

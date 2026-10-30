@@ -3,3 +3,13 @@ runs/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Held-out material is owner-held and never committed (EVAL-6). `python -m evals.fixtures.heldout`
+# refuses to read or write inside the repository; these patterns catch a manual copy too.
+cases/heldout/
+cases/h-*/
+heldout/
+heldout-*/
+*heldout*seeds*
+seeds.heldout*
+*.heldout.txt

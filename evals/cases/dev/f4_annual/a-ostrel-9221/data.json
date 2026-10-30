@@ -1,0 +1,98 @@
+{
+  "company": "Ostrel Biosystems",
+  "fiscal_year": "FY2025",
+  "currency": "USD",
+  "quarters": [
+    {
+      "quarter": "Q1 2025",
+      "revenue": 31900000,
+      "gross_margin_pct": 28.2,
+      "active_customers": 1119,
+      "notes": [
+        "The warehouse automation pilot moved into full production.",
+        "The board approved the revised pricing review for next quarter."
+      ],
+      "nps": null
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue": 34100000,
+      "gross_margin_pct": 25.9,
+      "active_customers": 1241,
+      "notes": [
+        "Two regional distributors renewed on multi-year terms.",
+        "The board approved the revised pricing review for next quarter."
+      ],
+      "nps": null
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue": 32600000,
+      "gross_margin_pct": 25.7,
+      "active_customers": 1150,
+      "notes": [
+        "The largest reseller paused orders while it restructured.",
+        "Headcount was flat; two open roles in finance remain unfilled."
+      ],
+      "nps": null
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue": 29200000,
+      "gross_margin_pct": 27.1,
+      "active_customers": 1042,
+      "notes": [
+        "The largest customer reduced its order volume after a reorganisation.",
+        "The board approved the revised pricing review for next quarter.",
+        "The NPS survey was postponed; no score exists for any quarter of the year."
+      ],
+      "nps": null
+    }
+  ],
+  "kpis": [
+    {
+      "quarter": "Q1 2025",
+      "revenue_usd": 31900000,
+      "gross_margin_pct": 28.2,
+      "active_customers": 1119
+    },
+    {
+      "quarter": "Q2 2025",
+      "revenue_usd": 34100000,
+      "gross_margin_pct": 25.9,
+      "active_customers": 1241
+    },
+    {
+      "quarter": "Q3 2025",
+      "revenue_usd": 32600000,
+      "gross_margin_pct": 25.7,
+      "active_customers": 1150
+    },
+    {
+      "quarter": "Q4 2025",
+      "revenue_usd": 29200000,
+      "gross_margin_pct": 27.1,
+      "active_customers": 1042
+    }
+  ],
+  "prior_year": {
+    "fiscal_year": "FY2024",
+    "revenue": 142200000
+  },
+  "metrics": {
+    "revenue_q1": 31900000,
+    "gross_margin_q1_pct": 28.2,
+    "active_customers_q1": 1119,
+    "revenue_q2": 34100000,
+    "gross_margin_q2_pct": 25.9,
+    "active_customers_q2": 1241,
+    "revenue_q3": 32600000,
+    "gross_margin_q3_pct": 25.7,
+    "active_customers_q3": 1150,
+    "revenue_q4": 29200000,
+    "gross_margin_q4_pct": 27.1,
+    "active_customers_q4": 1042,
+    "revenue_fy_prior": 142200000,
+    "nps": null
+  }
+}

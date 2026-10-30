@@ -1,0 +1,97 @@
+{
+  "values": {
+    "week_number": 37,
+    "payments_tickets_closed": 39,
+    "payments_open_bugs": 42,
+    "payments_deploys": 35,
+    "payments_auth_success_pct": 98.61,
+    "data_tickets_closed": 54,
+    "data_open_bugs": 18,
+    "data_deploys": 24,
+    "data_pipeline_freshness_min": 82,
+    "support_tickets_closed": 57,
+    "support_open_bugs": 19,
+    "support_deploys": 13,
+    "support_first_response_min": 138
+  },
+  "labels": {
+    "week_number": [
+      "week"
+    ],
+    "payments_tickets_closed": [
+      "Payments tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "payments_open_bugs": [
+      "Payments open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "payments_deploys": [
+      "Payments deploys",
+      "deploys",
+      "deployments"
+    ],
+    "payments_auth_success_pct": [
+      "authorisation success",
+      "auth success",
+      "authorization success"
+    ],
+    "data_tickets_closed": [
+      "Data tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "data_open_bugs": [
+      "Data open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "data_deploys": [
+      "Data deploys",
+      "deploys",
+      "deployments"
+    ],
+    "data_pipeline_freshness_min": [
+      "pipeline freshness",
+      "freshness"
+    ],
+    "support_tickets_closed": [
+      "Support tickets",
+      "tickets closed",
+      "tickets"
+    ],
+    "support_open_bugs": [
+      "Support open bugs",
+      "open bugs",
+      "bugs"
+    ],
+    "support_deploys": [
+      "Support deploys",
+      "deploys",
+      "deployments"
+    ],
+    "support_first_response_min": [
+      "first response",
+      "first-response"
+    ]
+  },
+  "derived": {
+    "tickets_closed_total": {
+      "value": 150,
+      "formula": "payments_tickets_closed + data_tickets_closed + support_tickets_closed"
+    },
+    "deploys_total": {
+      "value": 72,
+      "formula": "payments_deploys + data_deploys + support_deploys"
+    }
+  },
+  "facts": {
+    "company": "Vellmora Outdoor",
+    "week": "2026-W37",
+    "payments_lead": "Tomasz Okafor",
+    "data_lead": "Lena Castellanos",
+    "support_lead": "Ines Varga"
+  }
+}

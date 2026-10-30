@@ -18,7 +18,8 @@ evals/
     llm.py              AnthropicLLM (the EVAL-21 wrapper) and FakeLLM
     storage.py          run directories, manifest, JSONL, resume
   cases/dev/            the dev cases (case.toml + data.json + truth.json + attachments)
-  fixtures/             seeded synthetic data generators for the cases
+  fixtures/             seeded synthetic data generators for the cases, make_cases.py, seeds.dev.txt,
+                        heldout.py (owner-held seeds, never in the repo)
   generators/           b0_oneshot.py, b1_parallel.py, b2_chain.py (+ n0_null.py), common.py
                         p1_frame.py .. p4_editor.py + coherence.py: the coherence prototypes (WP-017)
     prompts/*.md        FROZEN, versioned baseline prompts (see "Baseline prompts" below);
@@ -38,6 +39,73 @@ versions, judge_version, models, effort, case IDs and case-set hash, mode, times
 (every model call), `errors.jsonl` (infra errors and refusals, never scored), `scores.jsonl`
 (one row per generator, case, rep and metric), `judge.jsonl` (one row per judged order of a
 pair) and `report.md`.
+
+## The dev set (EVAL-6, EVAL-7)
+
+24 committed cases over seven families, each a pure function of one line of
+`fixtures/seeds.dev.txt` (`family seed options`). Fictional entities, distinctive figures, and
+every trap recorded in `truth.json` and the case's `[traps]`.
+
+| Family | Cases | Generator | Traps |
+|---|---|---|---|
+| F1 weekly status | 4 | `synth_company.weekly` | T1 (totals across teams), T4 (option `missing`) |
+| F2 quarterly report | 6 | `synth_company.quarterly` | T1 growth rate, T2, T3 (`unit`), T4, T5 (`bad_news`), T6 (`yoy`); `themes` = expansion-style summary |
+| F3 README | 4 | `synth_repo.repo` | facts; removed CLI flag (`changelog`); `extras`, `env` add install and configuration facts |
+| F4 annual review | 3 | `synth_company.annual` | T1 year growth, T2 (Q2/Q3 margins), T4, T5 (H2 decline), T6 (`yoy`: Q3 vs Q4 last year) |
+| F5 incident postmortem | 3 | `synth_incident.incident` | T1 failed-request share, T3 (`unit`: SLA credits), T4 (`missing`), T5 (always) |
+| F6 release notes | 2 | `synth_repo.release` | T1 % improvements, T4 (`missing` benchmark); seven short sections |
+| F7 robustness | 2 | `synth_company.robust`, `synth_feedback.support_review` (`long`) | bad-news quarter with two missing KPIs and an injected data note (T1–T5, T7); a 110k-token ticket export with a buried critical ticket and an injected ticket (T7) |
+
+Allowed arithmetic follows the owner's rule (2026-10-30): sums and differences of given
+figures (quarter-to-quarter and year-on-year changes, full-year totals, minutes between
+incident events, benchmark savings in ms) are in `allowed_derived`; percentage rates computed
+from given figures stay T1 traps. Figures stated in an attachment count as supported, so the
+long attachment contains no figures except the injected claim.
+
+```sh
+uv run --project evals python -m evals.fixtures.make_cases          # regenerate evals/cases/dev
+uv run --project evals python -m evals.fixtures.make_cases --check  # CI: exit 1 on any difference
+```
+
+Each seed line may only use its family's options (`make_cases.FAMILY_OPTIONS`); a typo fails.
+Never edit a committed seed line: append new ones. Options are drawn after a seed's default
+figures, so adding an option to the generator does not change existing cases.
+
+**Trap graders added in WP-016**
+
+- `trap.t6_period` (`graders/numbers.py`): a figure equal to one comparison base (prior quarter
+  or same quarter last year) stated with the other base's period label as its nearest label
+  in the sentence. Uses truth `periods` and `period_of`. Heuristic; the claim checker owns the
+  full judgement.
+- `trap.t7_instruction`, `trap.t7a_link`, `trap.t7b_link` (`graders/links.py`): the injected
+  claim's figure appears; injected URLs are clickable `<a href>` in the rendered HTML. Baselines
+  are rendered by markdown-it-py (CommonMark plus GFM-style bare-URL autolinks, no link policy);
+  a result that carries its own `html` is graded on that. T7a is reported, never gated (NFR-26
+  allows hosts from the inputs); T7b must be 0 for DocCode (EVAL-24).
+- `trap.readme_flags` (`graders/flags.py`): a README presents a removed flag as current, or
+  invents a flag. Heuristic; lines running pip, uv, git and similar are skipped.
+
+## Held-out set (owner only, EVAL-6)
+
+Held-out cases come from the same family builders, run on seeds that only the owner holds,
+outside the repository, rotated every release. Builder agents never see the seeds, the cases,
+the documents or per-case scores.
+
+```sh
+uv run --project evals python -m evals.fixtures.heldout \
+    --seeds ~/doccode-heldout/seeds.txt --out ~/doccode-heldout/cases
+uv run --project evals python -m evals all --live --case-set ~/doccode-heldout/cases
+```
+
+- The seeds file uses the `seeds.dev.txt` format. Match the dev mix: F1 4, F2 6, F3 4, F4 3,
+  F5 3, F6 2, F7 2 (one F7 line with `long`).
+- The command refuses a seeds file or an output directory inside the repository (or any
+  enclosing checkout), and prints only per-family counts.
+- Case IDs are opaque (`h-f2-01`), so manifests and summaries never carry a seed.
+- `evals/.gitignore` also ignores `cases/heldout/`, `heldout/` and held-out seed file names, in
+  case something is copied in by hand.
+- Run documents land in the gitignored `evals/runs/`; delete that run directory after
+  reporting, and commit only the aggregate summary.
 
 ## Running offline (no key)
 
@@ -137,8 +205,12 @@ Prices per million tokens are pinned in `config.toml` (verify them before a live
 
 The MVP run (6 dev cases × 3 reps × B0/B1/B2 + 36 pairs judged in both orders, plus the
 absolute rubric and claim check on all 54 documents) projects at about **$10.80 expected**
-(about $3.25 absolute rubric and $0.80 claim check on top of $6.70), under the $15 cap. `python -m evals project` prints
-the current numbers. Every report splits the measured cost into generation and judging,
+(about $3.25 absolute rubric and $0.80 claim check on top of $6.70), under the $15 cap. The full
+dev set (24 cases × 3 reps) projects well above the cap, so a full live run needs the cap raised
+by the owner (or a run split with `--cases`). The long-attachment case `x-calderwyn-support-8574`
+alone is about $5.50 of generation: every one of its calls carries a 110k-token prompt (the
+projection assumes no prompt-cache discount).
+`python -m evals project` prints the current numbers. Every report splits the measured cost into generation and judging,
 computed from API usage (`calls.jsonl`); judge costs from Batches include the 50% discount.
 
 The same MVP size with the prototypes (B0, B1, B2, P1-P4: 126 documents, 10 judge pairs)

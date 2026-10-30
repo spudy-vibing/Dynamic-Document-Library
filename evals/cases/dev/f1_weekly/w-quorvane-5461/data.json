@@ -1,0 +1,95 @@
+{
+  "company": "Quorvane Analytics",
+  "week": "2026-W13",
+  "week_number": 13,
+  "teams": [
+    {
+      "team": "Platform",
+      "lead": "Lena Castellanos",
+      "done": [
+        "Closed the Kestrel security review",
+        "Released the Wren beta to internal users"
+      ],
+      "in_progress": [
+        "Design review for Lantern is in progress"
+      ],
+      "blockers": [
+        "Needs a decision from product on the Lantern scope"
+      ],
+      "next_week": [
+        "Start the Lantern rollout"
+      ],
+      "metrics": {
+        "tickets_closed": 24,
+        "open_bugs": 33,
+        "deploys": 21,
+        "p95_latency_ms": null
+      },
+      "notes": "The p95 latency figure is unavailable this week because the dashboard was down."
+    },
+    {
+      "team": "Mobile",
+      "lead": "Mateo Lindqvist",
+      "done": [
+        "Shipped project Juniper to all customers",
+        "Closed the Sorrel security review"
+      ],
+      "in_progress": [
+        "Design review for Tamarind is in progress"
+      ],
+      "blockers": [
+        "Waiting on legal sign-off for Tamarind"
+      ],
+      "next_week": [
+        "Complete the Tamarind review"
+      ],
+      "metrics": {
+        "tickets_closed": 62,
+        "open_bugs": 29,
+        "deploys": 16,
+        "crash_free_pct": 99.54
+      }
+    },
+    {
+      "team": "Data",
+      "lead": "Dario Nwosu",
+      "done": [
+        "Retired the old Cobalt service",
+        "Closed the Basalt security review"
+      ],
+      "in_progress": [
+        "Design review for Quill is in progress"
+      ],
+      "blockers": [],
+      "next_week": [
+        "Hand Quill over to support"
+      ],
+      "metrics": {
+        "tickets_closed": 27,
+        "open_bugs": 31,
+        "deploys": 12,
+        "pipeline_freshness_min": 59
+      }
+    }
+  ],
+  "team_metrics": [
+    {
+      "team": "Platform",
+      "tickets_closed": 24,
+      "open_bugs": 33,
+      "deploys": 21
+    },
+    {
+      "team": "Mobile",
+      "tickets_closed": 62,
+      "open_bugs": 29,
+      "deploys": 16
+    },
+    {
+      "team": "Data",
+      "tickets_closed": 27,
+      "open_bugs": 31,
+      "deploys": 12
+    }
+  ]
+}

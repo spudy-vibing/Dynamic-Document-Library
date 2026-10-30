@@ -1,0 +1,43 @@
+{
+  "package": "quorvane-pack",
+  "version": "0.4.9",
+  "description": "Bundle a static site into a single archive with content hashes.",
+  "command": "quorvanepack",
+  "requires_python": ">=3.11",
+  "license": "MIT",
+  "flags": [
+    {
+      "flag": "--config PATH",
+      "default": "./quorvanepack.toml"
+    },
+    {
+      "flag": "--workers N",
+      "default": 39
+    },
+    {
+      "flag": "--timeout SECONDS",
+      "default": 24
+    },
+    {
+      "flag": "--retries N",
+      "default": 19
+    },
+    {
+      "flag": "--dry-run",
+      "default": false
+    },
+    {
+      "flag": "--verbose",
+      "default": false
+    }
+  ],
+  "defaults": {
+    "timeout_s": 24,
+    "workers": 39,
+    "retries": 19
+  },
+  "extras": {
+    "azure": "azure-storage-blob>=12.19",
+    "s3": "boto3>=1.34"
+  }
+}

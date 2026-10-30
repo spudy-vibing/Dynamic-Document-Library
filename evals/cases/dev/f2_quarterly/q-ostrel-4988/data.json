@@ -1,0 +1,51 @@
+{
+  "company": "Ostrel Biosystems",
+  "period": "Q4 2026",
+  "prior_period": "Q3 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 69500000,
+    "revenue_this": 74600000,
+    "gross_margin_prior_pct": 23.7,
+    "gross_margin_pct": 22.1,
+    "opex_change_pct": 21.8,
+    "active_customers_prior": 4274,
+    "active_customers": 4383,
+    "churn_prior_pct": 4.6,
+    "churn_pct": 4.4,
+    "pipeline_coverage": null
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q3 2026": 69500000,
+      "Q4 2026": 74600000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q3 2026": 23.7,
+      "Q4 2026": 22.1
+    },
+    {
+      "kpi": "Active customers",
+      "Q3 2026": 4274,
+      "Q4 2026": 4383
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q3 2026": 4.6,
+      "Q4 2026": 4.4
+    },
+    {
+      "kpi": "Pipeline coverage",
+      "Q3 2026": null,
+      "Q4 2026": null
+    }
+  ],
+  "notes": [
+    "The warehouse automation pilot moved into full production.",
+    "Two regional distributors renewed on multi-year terms.",
+    "The ERP migration is on schedule for completion next quarter.",
+    "Pipeline coverage was not reported because the CRM migration is incomplete."
+  ]
+}

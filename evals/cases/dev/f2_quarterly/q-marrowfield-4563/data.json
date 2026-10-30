@@ -1,0 +1,61 @@
+{
+  "company": "Marrowfield Foods",
+  "period": "Q3 2026",
+  "prior_period": "Q2 2026",
+  "currency": "USD",
+  "metrics": {
+    "revenue_prior": 29400000,
+    "revenue_this": 27400000,
+    "gross_margin_prior_pct": 52.4,
+    "gross_margin_pct": 50.5,
+    "opex_change_pct": 50.2,
+    "active_customers_prior": 4813,
+    "active_customers": 4638,
+    "churn_prior_pct": 4.7,
+    "churn_pct": 5.4,
+    "pipeline_coverage": null,
+    "revenue_yoy": 31100000,
+    "gross_margin_yoy_pct": 53.8,
+    "active_customers_yoy": 5002,
+    "churn_yoy_pct": 6.3
+  },
+  "kpis": [
+    {
+      "kpi": "Revenue (USD)",
+      "Q3 2025": 31100000,
+      "Q2 2026": 29400000,
+      "Q3 2026": 27400000
+    },
+    {
+      "kpi": "Gross margin (%)",
+      "Q3 2025": 53.8,
+      "Q2 2026": 52.4,
+      "Q3 2026": 50.5
+    },
+    {
+      "kpi": "Active customers",
+      "Q3 2025": 5002,
+      "Q2 2026": 4813,
+      "Q3 2026": 4638
+    },
+    {
+      "kpi": "Churn (%)",
+      "Q3 2025": 6.3,
+      "Q2 2026": 4.7,
+      "Q3 2026": 5.4
+    },
+    {
+      "kpi": "Pipeline coverage",
+      "Q3 2025": null,
+      "Q2 2026": null,
+      "Q3 2026": null
+    }
+  ],
+  "notes": [
+    "Price discounting on the legacy line continued to weigh on revenue.",
+    "The largest customer reduced its order volume after a reorganisation.",
+    "The board approved the revised pricing review for next quarter.",
+    "Pipeline coverage was not reported because the CRM migration is incomplete."
+  ],
+  "year_ago_period": "Q3 2025"
+}

@@ -1,0 +1,142 @@
+{
+  "values": {
+    "requests_total": 5158632,
+    "requests_failed": 999792,
+    "peak_error_rate_pct": 29.4,
+    "customers_affected": null
+  },
+  "labels": {
+    "requests_total": [
+      "total requests",
+      "requests"
+    ],
+    "requests_failed": [
+      "failed requests",
+      "requests failed",
+      "failed"
+    ],
+    "peak_error_rate_pct": [
+      "peak error rate",
+      "error rate"
+    ],
+    "customers_affected": [
+      "customers affected",
+      "affected customers",
+      "customers"
+    ]
+  },
+  "derived": {
+    "time_to_detect_min": {
+      "value": 9,
+      "formula": "alert - impact_start (minutes)"
+    },
+    "time_to_mitigate_min": {
+      "value": 67,
+      "formula": "mitigated - impact_start (minutes)"
+    },
+    "duration_min": {
+      "value": 103,
+      "formula": "resolved - impact_start (minutes)"
+    },
+    "minutes_deploy_to_impact_start": {
+      "value": 12,
+      "formula": "impact_start - deploy (minutes)"
+    },
+    "minutes_deploy_to_alert": {
+      "value": 21,
+      "formula": "alert - deploy (minutes)"
+    },
+    "minutes_deploy_to_acknowledged": {
+      "value": 33,
+      "formula": "acknowledged - deploy (minutes)"
+    },
+    "minutes_deploy_to_rollback_start": {
+      "value": 53,
+      "formula": "rollback_start - deploy (minutes)"
+    },
+    "minutes_deploy_to_mitigated": {
+      "value": 79,
+      "formula": "mitigated - deploy (minutes)"
+    },
+    "minutes_deploy_to_resolved": {
+      "value": 115,
+      "formula": "resolved - deploy (minutes)"
+    },
+    "minutes_impact_start_to_alert": {
+      "value": 9,
+      "formula": "alert - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_acknowledged": {
+      "value": 21,
+      "formula": "acknowledged - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_rollback_start": {
+      "value": 41,
+      "formula": "rollback_start - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_mitigated": {
+      "value": 67,
+      "formula": "mitigated - impact_start (minutes)"
+    },
+    "minutes_impact_start_to_resolved": {
+      "value": 103,
+      "formula": "resolved - impact_start (minutes)"
+    },
+    "minutes_alert_to_acknowledged": {
+      "value": 12,
+      "formula": "acknowledged - alert (minutes)"
+    },
+    "minutes_alert_to_rollback_start": {
+      "value": 32,
+      "formula": "rollback_start - alert (minutes)"
+    },
+    "minutes_alert_to_mitigated": {
+      "value": 58,
+      "formula": "mitigated - alert (minutes)"
+    },
+    "minutes_alert_to_resolved": {
+      "value": 94,
+      "formula": "resolved - alert (minutes)"
+    },
+    "minutes_acknowledged_to_rollback_start": {
+      "value": 20,
+      "formula": "rollback_start - acknowledged (minutes)"
+    },
+    "minutes_acknowledged_to_mitigated": {
+      "value": 46,
+      "formula": "mitigated - acknowledged (minutes)"
+    },
+    "minutes_acknowledged_to_resolved": {
+      "value": 82,
+      "formula": "resolved - acknowledged (minutes)"
+    },
+    "minutes_rollback_start_to_mitigated": {
+      "value": 26,
+      "formula": "mitigated - rollback_start (minutes)"
+    },
+    "minutes_rollback_start_to_resolved": {
+      "value": 62,
+      "formula": "resolved - rollback_start (minutes)"
+    },
+    "minutes_mitigated_to_resolved": {
+      "value": 36,
+      "formula": "resolved - mitigated (minutes)"
+    },
+    "failed_request_share_pct": {
+      "value": 19.4,
+      "formula": "requests_failed / requests_total * 100"
+    }
+  },
+  "facts": {
+    "company": "Tessaline Robotics",
+    "codename": "Saltmarsh",
+    "service": "checkout API",
+    "date": "1 March 2026",
+    "release": "9.39.8",
+    "root_cause": "Release 9.39.8 lowered the database connection-pool limit, so checkout requests queued and timed out under normal weekday load.",
+    "incident_start_utc": "12:21",
+    "alert_utc": "12:30",
+    "mitigated_utc": "13:28",
+    "resolved_utc": "14:04"
+  }
+}

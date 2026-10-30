@@ -1,0 +1,80 @@
+{
+  "company": "Brightwell Ceramics",
+  "incident": "the Larkspur incident",
+  "service": "search indexer",
+  "severity": "SEV-2",
+  "date": "1 June 2026",
+  "timezone": "UTC",
+  "timeline": [
+    {
+      "time_utc": "12:54",
+      "event": "Release 4.35.3 of the search indexer starts rolling out to production."
+    },
+    {
+      "time_utc": "13:04",
+      "event": "Error rates on the search indexer begin to climb."
+    },
+    {
+      "time_utc": "13:12",
+      "event": "The SearchIndexLagCritical alert fires and pages the on-call engineer."
+    },
+    {
+      "time_utc": "13:20",
+      "event": "Olu Petrakis acknowledges the page and opens an incident channel."
+    },
+    {
+      "time_utc": "13:32",
+      "event": "The team decides to roll back release 4.35.3."
+    },
+    {
+      "time_utc": "13:45",
+      "event": "The rollback completes and error rates return to baseline."
+    },
+    {
+      "time_utc": "14:28",
+      "event": "Ama Brennan declares the incident resolved after monitoring stays clean."
+    }
+  ],
+  "impact": {
+    "requests_total": 6120773,
+    "requests_failed": 1145729,
+    "peak_error_rate_pct": 36.7,
+    "customers_affected": 2737,
+    "sla_credits_usd": 73800
+  },
+  "root_cause": "Release 4.35.3 changed the index mapping, so the indexer rejected documents with the old field type and search results went stale.",
+  "contributing_factors": [
+    "The mapping change had no migration step in the deploy checklist.",
+    "The lag alert threshold was set high enough that it fired only after customers noticed."
+  ],
+  "went_well": [
+    "The rollback runbook worked first time.",
+    "The on-call handover was clean."
+  ],
+  "went_badly": [
+    "Detection relied on a single alert with a high threshold.",
+    "Nobody owned the shared config file that changed."
+  ],
+  "action_items": [
+    {
+      "action": "Run canary stages at peak traffic, not off-peak",
+      "owner": "Mateo Lindqvist"
+    },
+    {
+      "action": "Add a review rule for changes to the shared config file",
+      "owner": "Dario Nwosu"
+    },
+    {
+      "action": "Lower the alert threshold and add a second, symptom-based alert",
+      "owner": "Sofia Achterberg"
+    },
+    {
+      "action": "Alert on dead-letter queue growth",
+      "owner": "Lena Castellanos"
+    }
+  ],
+  "notes": [
+    "Root cause: Release 4.35.3 changed the index mapping, so the indexer rejected documents with the old field type and search results went stale.",
+    "SLA credits are owed to enterprise customers whose monthly availability fell below the contracted level."
+  ]
+}

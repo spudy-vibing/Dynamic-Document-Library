@@ -1,0 +1,16 @@
+usage: ostrelixpack [OPTIONS] SOURCE
+
+Bundle a static site into a single archive with content hashes.
+
+options:
+  -h, --help            Show this message and exit
+  --config PATH         Read settings from PATH (default: ./ostrelixpack.toml)
+  --workers N           Number of parallel workers (default: 12)
+  --timeout SECONDS     Per-request timeout in seconds (default: 16)
+  --retries N           Retries per failed request (default: 11)
+  --dry-run             Print what would happen without changing anything
+  --verbose             Log every file considered
+
+environment variables:
+  OSTRELIXPACK_TOKEN      API token for the storage backend (required)
+  OSTRELIXPACK_CACHE_DIR  Where to keep the local state cache (default: ~/.cache)

@@ -1,0 +1,79 @@
+{
+  "company": "Tessaline Robotics",
+  "incident": "the Saltmarsh incident",
+  "service": "checkout API",
+  "severity": "SEV-2",
+  "date": "1 March 2026",
+  "timezone": "UTC",
+  "timeline": [
+    {
+      "time_utc": "12:09",
+      "event": "Release 9.39.8 of the checkout API starts rolling out to production."
+    },
+    {
+      "time_utc": "12:21",
+      "event": "Error rates on the checkout API begin to climb."
+    },
+    {
+      "time_utc": "12:30",
+      "event": "The CheckoutErrorRateHigh alert fires and pages the on-call engineer."
+    },
+    {
+      "time_utc": "12:42",
+      "event": "Ines Varga acknowledges the page and opens an incident channel."
+    },
+    {
+      "time_utc": "13:02",
+      "event": "The team decides to roll back release 9.39.8."
+    },
+    {
+      "time_utc": "13:28",
+      "event": "The rollback completes and error rates return to baseline."
+    },
+    {
+      "time_utc": "14:04",
+      "event": "Kenji Moreau declares the incident resolved after monitoring stays clean."
+    }
+  ],
+  "impact": {
+    "requests_total": 5158632,
+    "requests_failed": 999792,
+    "peak_error_rate_pct": 29.4,
+    "customers_affected": null
+  },
+  "root_cause": "Release 9.39.8 lowered the database connection-pool limit, so checkout requests queued and timed out under normal weekday load.",
+  "contributing_factors": [
+    "The pool limit was changed in a shared config file without a review from the payments team.",
+    "The canary stage ran at off-peak traffic, so the queueing never showed before full rollout."
+  ],
+  "went_well": [
+    "The rollback runbook worked first time.",
+    "The incident channel kept a clear written timeline."
+  ],
+  "went_badly": [
+    "Nobody owned the shared config file that changed.",
+    "The status page was updated well after customers started reporting errors."
+  ],
+  "action_items": [
+    {
+      "action": "Alert on dead-letter queue growth",
+      "owner": "Priya Halloran"
+    },
+    {
+      "action": "Lower the alert threshold and add a second, symptom-based alert",
+      "owner": "Dario Nwosu"
+    },
+    {
+      "action": "Add a review rule for changes to the shared config file",
+      "owner": "Tomasz Okafor"
+    },
+    {
+      "action": "Run canary stages at peak traffic, not off-peak",
+      "owner": "Lena Castellanos"
+    }
+  ],
+  "notes": [
+    "Root cause: Release 9.39.8 lowered the database connection-pool limit, so checkout requests queued and timed out under normal weekday load.",
+    "The number of affected customers is still being reconciled with the billing system; no count is available yet."
+  ]
+}

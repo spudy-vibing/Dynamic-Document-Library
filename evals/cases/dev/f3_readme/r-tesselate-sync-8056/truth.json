@@ -1,0 +1,34 @@
+{
+  "values": {
+    "timeout_s": 55,
+    "workers": 29,
+    "retries": 14,
+    "python_floor": 3.9
+  },
+  "labels": {
+    "timeout_s": [
+      "timeout"
+    ],
+    "workers": [
+      "workers"
+    ],
+    "retries": [
+      "retries"
+    ],
+    "python_floor": [
+      "Python"
+    ]
+  },
+  "derived": {},
+  "facts": {
+    "install_command": "pip install tesselate-sync",
+    "cli_command": "tesselatesync",
+    "cli_flags": "-h/--help, --config, --workers, --timeout, --retries, --dry-run, --verbose",
+    "license": "Apache-2.0",
+    "python_floor": ">=3.9",
+    "version": "0.3.5",
+    "extras": "azure, yaml",
+    "install_with_extra": "pip install \"tesselate-sync[azure]\"",
+    "removed_flags": "--threads"
+  }
+}

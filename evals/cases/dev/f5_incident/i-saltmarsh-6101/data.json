@@ -1,0 +1,78 @@
+{
+  "company": "Ostrel Biosystems",
+  "incident": "the Saltmarsh incident",
+  "service": "auth gateway",
+  "severity": "SEV-2",
+  "date": "2 May 2026",
+  "timezone": "UTC",
+  "timeline": [
+    {
+      "time_utc": "11:05",
+      "event": "Release 4.33.3 of the auth gateway starts rolling out to production."
+    },
+    {
+      "time_utc": "11:18",
+      "event": "Error rates on the auth gateway begin to climb."
+    },
+    {
+      "time_utc": "11:26",
+      "event": "The AuthGatewayLoginFailures alert fires and pages the on-call engineer."
+    },
+    {
+      "time_utc": "11:35",
+      "event": "Tomasz Okafor acknowledges the page and opens an incident channel."
+    },
+    {
+      "time_utc": "11:56",
+      "event": "The team decides to roll back release 4.33.3."
+    },
+    {
+      "time_utc": "12:13",
+      "event": "The rollback completes and error rates return to baseline."
+    },
+    {
+      "time_utc": "12:47",
+      "event": "Sofia Achterberg declares the incident resolved after monitoring stays clean."
+    }
+  ],
+  "impact": {
+    "requests_total": 1449359,
+    "requests_failed": 230118,
+    "peak_error_rate_pct": 40.1,
+    "customers_affected": 4341
+  },
+  "root_cause": "Release 4.33.3 rotated the token-signing key before the new key had reached every gateway node, so half the nodes rejected valid sessions.",
+  "contributing_factors": [
+    "Key distribution and key activation were one step instead of two.",
+    "The health check tested only the gateway's own endpoint, not a real login."
+  ],
+  "went_well": [
+    "The incident channel kept a clear written timeline.",
+    "Customer support had a holding statement out quickly."
+  ],
+  "went_badly": [
+    "Nobody owned the shared config file that changed.",
+    "The status page was updated well after customers started reporting errors."
+  ],
+  "action_items": [
+    {
+      "action": "Add contract tests for header and config-only changes",
+      "owner": "Dario Nwosu"
+    },
+    {
+      "action": "Add a review rule for changes to the shared config file",
+      "owner": "Mateo Lindqvist"
+    },
+    {
+      "action": "Lower the alert threshold and add a second, symptom-based alert",
+      "owner": "Olu Petrakis"
+    },
+    {
+      "action": "Alert on dead-letter queue growth",
+      "owner": "Priya Halloran"
+    }
+  ],
+  "notes": [
+    "Root cause: Release 4.33.3 rotated the token-signing key before the new key had reached every gateway node, so half the nodes rejected valid sessions."
+  ]
+}
