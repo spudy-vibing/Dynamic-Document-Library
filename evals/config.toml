@@ -33,6 +33,16 @@ use_batches = true                # Message Batches API (about 50% cheaper)
 pairs = [
     ["b0-oneshot", "b1-parallel"],
     ["b2-chain", "b1-parallel"],
+    # Coherence ablation (WP-017, EVAL-4): each prototype against B1 and B0. Judged only
+    # when both generators are in the run (`--generators ... p1-frame ...`).
+    ["p1-frame", "b1-parallel"],
+    ["p1-frame", "b0-oneshot"],
+    ["p2-brief", "b1-parallel"],
+    ["p2-brief", "b0-oneshot"],
+    ["p3-flow", "b1-parallel"],
+    ["p3-flow", "b0-oneshot"],
+    ["p4-editor", "b1-parallel"],
+    ["p4-editor", "b0-oneshot"],
 ]
 
 [run]
